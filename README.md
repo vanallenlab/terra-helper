@@ -1,5 +1,5 @@
 # FireCloud helper
-FireCloud helper is a collection of scripts which leverages the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks. 
+FireCloud helper is a collection of scripts which leverage the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks on [FireCloud](firecloud.org). 
 
 ## Installation
 To use FireCloud helper, you must have the following set up on your system
@@ -28,7 +28,7 @@ You must also have write access on FireCloud to whichever workspace you want to 
 This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that **FireCloud's call-cache passes files by copying, instead of by reference**; this results in duplicate files whenever a method is rerun. 
 
 ### Usage
-clean_workspace.py requires at least the workspace's namespace and name. To actual delete files, pass `--clean`.   
+clean_workspace.py requires at least the workspace's namespace and name. To actually delete files, pass `--clean`.   
 Required arguments:
 ```bash
     --namespace     <string>    Workspace's namespace

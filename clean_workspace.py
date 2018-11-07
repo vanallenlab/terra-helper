@@ -39,7 +39,6 @@ def check_request(response, failure_message):
 def format_request_to_tsv(string_tsv):
     return pd.read_csv(io.StringIO(string_tsv.decode('utf-8')), sep='\t')
 
-def format_set_response(response):
 
 def format_usage(response):
     return response.json()['usageInBytes']
@@ -71,9 +70,13 @@ def get_entity_type_datamodel(namespace, name, headers, entity_type):
     request = '/'.join([root, 'workspaces', namespace, name, 'entities', entity_type, 'tsv'])
     return requests.get(request, headers=headers)
 
+
 def get_entity_type_set_datamodel(namespace, name, headers, entity_type):
     response = get_entity_type_datamodel(namespace, name, headers, entity_type)
-    z =
+    z = zipfile.ZipFile(io.BytesIO(response.content))
+    filename = '_'.join([entity_type, 'membership.tsv'])
+    return z.read(filename)
+
 
 def get_workspace(namespace, name, headers):
     request = '/'.join([root, 'workspaces', namespace, name])
@@ -163,7 +166,7 @@ def remove_files(files_list, chunksize):
             headers = generate_header()
             counter = 0
 
-    print(str(len(files_list)) + 'files removed')
+    print(str(len(files_list)) + ' files removed')
     return headers
 
 
@@ -196,16 +199,14 @@ def index(namespace, name, headers, keep_logs, index_name):
     entity_types = list_entity_types(namespace, name, headers)
     datamodel_attributes = []
     for entity_type in entity_types:
-        # Sets return a different type of encoded response. Sent Alex a msg on how to handle this
-        if entity_type == 'sample_set':
-            continue
-        elif entity_type == 'pair_set':
-            continue
+        if (entity_type == 'sample_set') | (entity_type == 'pair_set'):
+            entity_tsv = get_entity_type_set_datamodel(namespace, name, headers, entity_type)
+            entity_dataframe = format_request_to_tsv(entity_tsv)
         else:
             entity_tsv = get_entity_type_datamodel(namespace, name, headers, entity_type)
             entity_dataframe = format_request_to_tsv(entity_tsv.content)
-            entity_list = list_datamodel_columns(entity_dataframe)
-            datamodel_attributes.extend(entity_list)
+        entity_list = list_datamodel_columns(entity_dataframe)
+        datamodel_attributes.extend(entity_list)
 
     workspace_attributes = list_workspace_attributes(namespace, name, headers)
     attributes_in_bucket = subset_attributes_in_bucket(bucket_name, datamodel_attributes, workspace_attributes)
@@ -225,7 +226,7 @@ def index(namespace, name, headers, keep_logs, index_name):
     files_to_remove = blobs_to_remove
     print(' '.join(["Total files in workspace's bucket:", str(len(all_blobs_in_bucket))]))
     print(' '.join(["Number of files to delete:", str(len(files_to_remove))]))
-    print(' '.join(["Cost of indexing:", str(calculate_egress_cost(all_blobs_in_bucket))]))
+    print(' '.join(["Cost of indexing:", str(calculate_egress_cost(len(all_blobs_in_bucket)))]))
 
     print(' '.join(["Writing files to remove to", index_name]))
     pd.Series(files_to_remove).to_csv(index_name, sep='\t', index=False)
@@ -308,7 +309,7 @@ def clean(namespace, name, headers, filename, chunksize, dryrun):
     print(' '.join(['This clean up will save the lab', str(difference_cost), 'per month.']))
     print('')
 
-    print('Note: You actually did save money!)\n'
+    print('Note: You actually did save money!\n'
           'FireCloud caches the storage costs once per day to save money. Check back tomorrow :)')
     print('In the meantime, go ask Eli to buy lunch')
     print('')
@@ -360,9 +361,6 @@ if __name__ == "__main__":
         clean(input_namespace, input_name, headers, input_filename, input_chunksize, input_dryrun)
     else:
         print('Please specify --index or --clean')
-
-
-#    main(input_namespace, input_name, keeplogs=input_keeplogs, filename=input_filename, dry_run=dryrun)
 
     end_time = time.time()
     time_statement = "Workspace cleaning runtime: %s seconds" % round((end_time - start_time), 4)

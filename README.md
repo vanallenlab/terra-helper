@@ -27,8 +27,11 @@ You must also have write access on FireCloud to whichever workspace you want to 
 ## clean_workspace.py
 This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that **FireCloud's call-cache passes files by copying, instead of by reference**; this results in duplicate files whenever a method is rerun. 
 
+**This should not be used while a submission is running in your workspace.**
+
 ### Usage
-clean_workspace.py requires at least the workspace's namespace and name. To actually delete files, pass `--clean`.   
+clean_workspace.py has two modes: `--index` and `--clean`. `--index` will create a list of files to delete from your workspace while `--clean` will delete files. These modules were split to reduce the number of times that `gsutil ls` is being called, [because listing files costs money](https://github.com/vanallenlab/firecloud_helper/issues/2).
+
 Required arguments:
 ```bash
     --namespace     <string>    Workspace's namespace
@@ -36,8 +39,24 @@ Required arguments:
 ```
 Optional arguments:
 ```bash
-    --clean         <boolean>   Will actually delete files when passed
-    --chunksize     <int>       Number of files to pass to gsutil at once for parallel deletion. Default = 500.
-    --filename      <string>    Filename of written list of files to be deleted. Default = files_to_remove.txt
+    --filename      <string>    Filename for files to remove, default=files_to_remove.(namespace).(name).txt
+    
+    
+    --index         <boolean>   Will index workspace for files to remove, write to --filename
+    --keeplogs      <boolean>   Boolean for keeping log files for folders not in data model
+    
+    --clean         <boolean>   Will delete files listed in --filename
+    --chunksize     <int>       Number of files to pass to gsutil at once for parallel deletion, default=500
 ```
-Chunksize is a necessary parameter because operating systems have character limits of how long commands are.
+Chunksize is a necessary parameter for `--clean` because operating systems have character limits of how long commands are.
+
+`--clean` will produce a summary of the storage before and after deletion
+```bash
+    namespace                       namespace_name
+    name                            workspace_name
+    initial_bucket_size_gb          100
+    initial_bucket_monthly_cost_$   5
+    number_of_files_to_delete       20
+    updated_bucket_size_gb          80
+    updated_bucket_monthly_cost_$   4
+```

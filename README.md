@@ -25,7 +25,7 @@ source activate venv_firecloud_helper
 You must also have write access on FireCloud to whichever workspace you want to interact with.
 
 ## clean_workspace.py
-This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that *FireCloud's call-cache passes files by copying, instead of by reference*; this results in duplicate files whenever a method is rerun. 
+This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that **FireCloud's call-cache passes files by copying, instead of by reference**; this results in duplicate files whenever a method is rerun. 
 
 ### Usage
 clean_workspace.py requires at least the workspace's namespace and name. To actual delete files, pass `--clean`.   

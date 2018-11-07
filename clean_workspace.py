@@ -13,7 +13,6 @@ def print_json(data):
         print(key, value)
         print('')
 
-
 def check_request(response, failure_message):
     if response.status_code not in [200, 201, 204]:
         return {'message': failure_message,
@@ -26,14 +25,11 @@ def check_request(response, failure_message):
                 'response_status_code': response.status_code,
                 'response_content': response.content}
 
-
 def format_request_to_tsv(string_tsv):
     return pd.read_csv(io.StringIO(string_tsv.decode('utf-8')), sep='\t')
 
-
 def format_usage(response):
     return response.json()['usageInBytes']
-
 
 def calculate_usage(usage_bytes):
     usage_gigabytes = float(usage_bytes) / 10 ** 9
@@ -41,38 +37,31 @@ def calculate_usage(usage_bytes):
     monthly_cost = float(usage_terabytes) * 26
     return usage_gigabytes, usage_terabytes, monthly_cost
 
-
 def get_bucket_usage(namespace, name, headers):
     request = '/'.join([root, 'workspaces', namespace, name, 'bucketUsage'])
     return requests.get(request, headers=headers)
-
 
 def get_entity_types(namespace, name, headers):
     request = '/'.join([root, 'workspaces', namespace, name, 'entities'])
     return requests.get(request, headers=headers)
 
-
 def get_entity_type_datamodel(namespace, name, headers, entity_type):
     request = '/'.join([root, 'workspaces', namespace, name, 'entities', entity_type, 'tsv'])
     return requests.get(request, headers=headers)
-
 
 def get_workspace(namespace, name, headers):
     request = '/'.join([root, 'workspaces', namespace, name])
     return requests.get(request, headers=headers)
 
-
 def get_workspace_attributes(namespace, name, headers):
     request = '/'.join([root, 'workspaces', namespace, name, 'exportAttributesTSV'])
     return requests.get(request, headers=headers)
-
 
 def list_datamodel_columns(dataframe):
     list_ = []
     for col in dataframe.columns:
         list_.extend(dataframe.loc[:, col].tolist())
     return list_
-
 
 def list_entity_types(namespace, name, headers):
     r = get_entity_types(namespace, name, headers)
@@ -81,16 +70,6 @@ def list_entity_types(namespace, name, headers):
         return print_json(check_r)
     else:
         return list(r.json().keys())
-
-
-def list_entity_type_datamodel(namespace, name, headers, entity_type):
-    check_r = check_request(r, 'Failed to get datamodel for ' + entity_type)
-    if check_r['message'] != 'success!':
-        return print_json(check_r)
-    else:
-        df = format_request_to_tsv(r.content)
-        return list_datamodel_columns(df)
-
 
 def list_workspace_attributes(namespace, name, headers):
     r = get_workspace_attributes(namespace, name, headers)
@@ -101,29 +80,25 @@ def list_workspace_attributes(namespace, name, headers):
         df = format_request_to_tsv(r.content)
         return df.loc[0, :].tolist()
 
-
 def remove_logs_from_blobs(blobs):
-    no_stdout = [blob for blob in blobs if not str(blob).endswith('stdout')]
-    no_stderr = [blob for blob in no_stdout if not str(blob).endswith('stderr')]
-    no_logs = [blob for blob in no_stderr if not str(blob).endswith('.log')]
-    no_rc = [blob for blob in no_logs if not str(blob).endswith('rc')]
-    no_exec = [blob for blob in no_rc if not str(blob).endswith('exec.sh')]
-    no_script = [blob for blob in no_exec if not str(blob).endswith('script')]
+    no_stdout = (blob for blob in blobs if not str(blob).endswith('stdout'))
+    no_stderr = (blob for blob in no_stdout if not str(blob).endswith('stderr'))
+    no_logs = (blob for blob in no_stderr if not str(blob).endswith('.log'))
+    no_rc = (blob for blob in no_logs if not str(blob).endswith('rc'))
+    no_exec = (blob for blob in no_rc if not str(blob).endswith('exec.sh'))
+    no_script = (blob for blob in no_exec if not str(blob).endswith('script'))
     return no_script
-
 
 def subset_attributes_in_bucket(bucket_name, entities_list, workspace_list):
     bucket_id = ''.join(['gs://', bucket_name])
     combined_list = entities_list + workspace_list
     return [blob for blob in combined_list if str(blob).startswith(bucket_id)]
 
-
 def glob_bucket(bucket):
     cmd = ''.join(['gsutil ls gs://', bucket, '/**'])
     bucket_files = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
     series = pd.read_csv(io.StringIO(bucket_files.decode('utf-8')), sep='\n', header=-1).loc[:, 0]
     return series.tolist()
-
 
 def remove_files(files_list, chunksize):
     n = chunksize
@@ -133,7 +108,6 @@ def remove_files(files_list, chunksize):
         cmd = ' '.join(['gsutil -m rm'] + chunk)
         subprocess.call(cmd, shell=True)
     print(str(len(files_list)) + 'files removed')
-
 
 def main(namespace, name, headers, chunksize, filename, dry_run=True):
     print('Cleaning up workspace')

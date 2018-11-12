@@ -199,7 +199,7 @@ def index(namespace, name, headers, keep_logs, index_name):
     entity_types = list_entity_types(namespace, name, headers)
     datamodel_attributes = []
     for entity_type in entity_types:
-        if (entity_type == 'sample_set') | (entity_type == 'pair_set'):
+        if (entity_type == 'sample_set') | (entity_type == 'pair_set') | (entity_type == 'participant_set'):
             entity_tsv = get_entity_type_set_datamodel(namespace, name, headers, entity_type)
             entity_dataframe = format_request_to_tsv(entity_tsv)
         else:

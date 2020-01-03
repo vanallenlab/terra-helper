@@ -116,7 +116,10 @@ def list_workspace_attributes(namespace, name, headers):
         return print_json(check_r)
     else:
         df = format_request_to_tsv(r.content)
-        return df.loc[0, :].tolist()
+        if df.shape[0] != 0:
+            return df.loc[0, :].tolist()
+        else:
+            return []
 
 
 def remove_logs_from_blobs(blobs):
@@ -145,7 +148,7 @@ def subset_blobs_for_attribute_paths(paths, all_blobs):
 def glob_bucket(bucket):
     cmd = ''.join(['gsutil ls gs://', bucket, '/**'])
     bucket_files = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
-    series = pd.read_csv(io.StringIO(bucket_files.decode('utf-8')), sep='\n', header=-1).loc[:, 0]
+    series = pd.read_csv(io.StringIO(bucket_files.decode('utf-8')), sep='\n', header=None).loc[:, 0]
     return series.tolist()
 
 
@@ -229,7 +232,7 @@ def index(namespace, name, headers, keep_logs, index_name):
     print(' '.join(["Cost of indexing:", str(calculate_egress_cost(len(all_blobs_in_bucket)))]))
 
     print(' '.join(["Writing files to remove to", index_name]))
-    pd.Series(files_to_remove).to_csv(index_name, sep='\t', index=False)
+    pd.Series(files_to_remove).to_csv(index_name, sep='\t', index=False, header=False)
 
 
 def clean(namespace, name, headers, filename, chunksize, dryrun):

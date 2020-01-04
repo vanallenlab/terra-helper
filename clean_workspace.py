@@ -272,7 +272,7 @@ def clean(namespace, name, headers, filename, chunksize, dryrun):
     summary.loc['initial_bucket_size_gb'] = usage_gigabytes
     summary.loc['initial_bucket_monthly_cost_$'] = monthly_cost
 
-    blobs_to_delete = pd.read_csv(filename, sep='\t', header=-1)
+    blobs_to_delete = pd.read_csv(filename, sep='\t', header=None)
     blobs_to_delete = blobs_to_delete.loc[:, 0].tolist()
 
     summary.loc['number_of_files_to_delete'] = len(blobs_to_delete)

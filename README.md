@@ -1,8 +1,10 @@
 # FireCloud helper
-FireCloud helper is a collection of scripts which leverage the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks on [FireCloud](firecloud.org). 
+FireCloud helper is a collection of scripts which leverage the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks on [FireCloud](firecloud.org). A more appropriate name for this repository may be `Terra storage helper`, as the platform has since rebranded. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which functions similarly.
 
 ## Installation
-To use FireCloud helper, you must have the following set up on your system
+
+### System requirements
+To use terra storage helper, you must have the following set up on your system
 - [Google Cloud SDK](https://cloud.google.com/sdk/)
 - Python 3
 
@@ -16,16 +18,33 @@ You may need to export your google cloud auth token
 export GCS_OAUTH_TOKEN=`gcloud auth application-default print-access-token`
 ```
 
-FireCloud helper uses Python 3.6. We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) and running Python with either [Anaconda](https://www.anaconda.com/download/) or  [Miniconda](https://conda.io/miniconda.html). After installing Anaconda or Miniconda, you can set up by running
+### Download this software from Github
+This package can be download through Github on the website or by using terminal. To download on the website, navigate to the top of this page, click the green `Clone or download` button, and select `Download ZIP`. This will download this repository in a compressed format. To install using Github on terminal, type 
+
 ```bash
-conda create -y -n venv_firecloud_helper python=3.6 --file requirements.txt
-source activate venv_firecloud_helper
+git clone https://github.com/vanallenlab/firecloud-helper.git
+cd firecloud-helper
 ```
 
-You must also have write access on FireCloud to whichever workspace you want to interact with.
+### Install Python dependencies
+FireCloud helper uses Python 3.6. We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) and running Python with either [Anaconda](https://www.anaconda.com/download/) or  [Miniconda](https://conda.io/miniconda.html). 
+
+To create a virtual environment and install dependencies with Anaconda or Miniconda, run the following from this repository's directory:
+```bash
+conda create -y -n firecloud-helper python=3.6
+conda activate firecloud-helper
+pip install -r requirements.txt
+```
+
+If you are using base Python, you can create a virtual environment and install dependencies by running:
+```bash
+virtualenv firecloud-helper
+source activate firecloud-helper/bin/activate
+pip install -r requirements.txt
+```
 
 ## clean_workspace.py
-This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that **FireCloud's call-cache passes files by copying, instead of by reference**; this results in duplicate files whenever a method is rerun. 
+This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that **FireCloud's call-cache passes files by copying, instead of by reference**; this results in duplicate files whenever a method is rerun. You must also have write access on FireCloud to whichever workspace you want to interact with.
 
 **This should not be used while a submission is running in your workspace.**
 
@@ -57,6 +76,17 @@ Chunksize is a necessary parameter for `--clean` because operating systems have 
     initial_bucket_size_gb          100
     initial_bucket_monthly_cost_$   5
     number_of_files_to_delete       20
-    updated_bucket_size_gb          80
-    updated_bucket_monthly_cost_$   4
 ```
+
+### Example 
+If I want to index and clean a workspace called `TEST-WORKSPACE` under the namespace `BILLING-NAMESPACE`, the following commands would be used. To index,
+```bash
+python clean_workspace.py --index --namespace BILLING-NAMESPACE --name TEST-WORKSPACE
+```
+
+This would run and create a file called `files_to_remove.BILLING-NAMESPACE.TEST-WORKSPACE.txt`. This file should be manually inspected as all files in this file will be deleted. After inspection, the following code can be run to delete the contained files,
+```bash
+python clean_workspace.py --clean --namespace BILLING-NAMEPSACE --name TEST-WORKSPACE
+```
+
+Savings are calculated in real time by Google and will be reflected in your monthly bill; however, because Terra only updates the storage estimate display once a day, savings will be observable through the user interface after 24 hours.  

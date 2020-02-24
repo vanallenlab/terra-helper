@@ -160,7 +160,9 @@ def remove_files(files_list, chunksize):
 
     counter = 0
     for chunk in list_of_lists:
-        cmd = ' '.join(['gsutil -m rm'] + chunk)
+        chunk = [file.replace(' ', '\ ') for file in chunk]
+        files = '"' + ' '.join(chunk) + '"'
+        cmd = ' '.join(['gsutil -m rm', files])
         subprocess.call(cmd, shell=True)
         counter = counter + 1
 
@@ -219,7 +221,8 @@ def index(namespace, name, headers, keep_logs, index_name):
 
     # Subset to keep files in folders that are in the data model
     attribute_blobs = subset_blobs_for_attribute_paths(attribute_paths, all_blobs_in_bucket)
-    blobs_to_remove = list(set(all_blobs_in_bucket) - set(attribute_blobs))
+#    blobs_to_remove = list(set(all_blobs_in_bucket) - set(attribute_blobs))
+    blobs_to_remove = list(set(all_blobs_in_bucket) - set(attributes_in_bucket))
     if keep_logs:
         # Keeps logs of other folders
         blobs_to_remove = remove_logs_from_blobs(blobs_to_remove)

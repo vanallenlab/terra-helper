@@ -189,17 +189,17 @@ def index(namespace, name, headers, keep_logs, index_name):
 
     # Get workspace current storage usage
     bucket_name = request_workspace.json()['workspace']['bucketName']
-#    request_usage = get_bucket_usage(namespace, name, headers)
-#    check_r = check_request(request_usage, 'Failed to get workspace bucket usage')
-#    if check_r['message'] != 'success!':
-#        return print_json(check_r)
+    request_usage = get_bucket_usage(namespace, name, headers)
+    check_r = check_request(request_usage, 'Failed to get workspace bucket usage')
+    if check_r['message'] != 'success!':
+        return print_json(check_r)
 
-#    usage_bytes = format_usage(request_usage)
-#    usage_gigabytes, usage_terabytes, monthly_cost = calculate_usage(usage_bytes)
-#    print(' '.join(['Bucket name:', str(bucket_name)]))
-#    print(' '.join(['Storage used (Gigabytes):', str(round(usage_gigabytes, 3))]))
-#    print(' '.join(['Monthly cost of storage ($):', str(round(monthly_cost, 2))]))
-#    print('')
+    usage_bytes = format_usage(request_usage)
+    usage_gigabytes, usage_terabytes, monthly_cost = calculate_usage(usage_bytes)
+    print(' '.join(['Bucket name:', str(bucket_name)]))
+    print(' '.join(['Storage used (Gigabytes):', str(round(usage_gigabytes, 3))]))
+    print(' '.join(['Monthly cost of storage ($):', str(round(monthly_cost, 2))]))
+    print('')
 
     # Get attributes in datamodel that are in this workspace's bucket
     entity_types = list_entity_types(namespace, name, headers)
@@ -221,10 +221,9 @@ def index(namespace, name, headers, keep_logs, index_name):
     all_blobs_in_bucket = glob_bucket(bucket_name)
 
     # Subset to keep files in folders that are in the data model
-#    attribute_blobs = subset_blobs_for_attribute_paths(attribute_paths, all_blobs_in_bucket)
+    attribute_blobs = subset_blobs_for_attribute_paths(attribute_paths, all_blobs_in_bucket)
 #    blobs_to_remove = list(set(all_blobs_in_bucket) - set(attribute_blobs))
-    #blobs_to_remove = list(set(all_blobs_in_bucket) - set(attributes_in_bucket))
-    blobs_to_remove = all_blobs_in_bucket
+    blobs_to_remove = list(set(all_blobs_in_bucket) - set(attributes_in_bucket))
     if keep_logs:
         # Keeps logs of other folders
         blobs_to_remove = remove_logs_from_blobs(blobs_to_remove)

@@ -88,3 +88,39 @@ python clean_workspace.py --clean --namespace BILLING-NAMEPSACE --name TEST-WORK
 ```
 
 Savings are calculated in real time by Google and will be reflected in your monthly bill; however, because Terra only updates the storage estimate display once a day, savings will be observable through the user interface after 24 hours.  
+
+## copy_bucket.py
+This script will allow you to copy the contents of one bucket to another. The copy produces a log of files copied, named `{original_bucket}-to-{new_bucket}.copy_log.csv`, from Google's [gsutil cp](). This log is then used to create an index file of all files that were successfully copied, to be used with clean_workspace.py to remove the originals. **Please note that the bucket is moved to the new with the parent directory in tact; so, the contents of `gs://fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/` when being moved to `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/` will be located at `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/`.**
+
+### Usage
+Pass the original google bucket address and the new google bucket address to the script `copy_bucket.py`. The prefix `gs://` will be removed if passed.
+
+Required arguments:
+```bash
+    --original          <string>    Original workspace's bucket
+    --new               <string>    New workspace's bucket
+```
+Optional arguments:
+```bash
+    --filename          <string>    Filename for files to remove, default=files_to_remove.(original bucket).from_copier.txt
+    --disable_timeout   <boolean>   Boolean to disable the 12 hr timeout on gsutil cp 
+```
+
+Two files will be produced:
+- `{original bucket}-to-{new bucket}.copy_log.csv`, gsutil cp's log of all files copied and their status.
+- `files_to_remove.{original bucket}.from_copier.txt`, an index file of all successfully copied files to be used with `clean_workspace.py`.
+
+There seemed to be an issue with gsutil hanging on the copy from one bucket to another, which _seems_ to be resolved by using Python 3.7. Just in case, I added a 12 hour timeout to the subprocess which runs gsutil cp. If you get timed out, look at the gsutil cp log. If the log was updated recently, your workspace must be huge! I'm sorry, rerun with `--disable_timeout` and thankfully your progress thus far is cached. If the log has _not_ been updated in a very long time then you may have been left hanging. Make sure that you're using Python 3.7 and let me know. 
+
+### Example
+To move the contents of the workspace `vanallen-firecloud-dfci/An_AnCan`, `gs://fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533`, to `vanallen-firecloud-dfci/test-migration-workspace`, `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4`, I would do the following:
+```bash
+python copy_bucket.py --original fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533 --new fc-0e064e14-e364-4983-84b7-3b2a3900a0c4
+```
+This will produce a file `fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533-to-fc-0e064e14-e364-4983-84b7-3b2a3900a0c4.copy_log.csv`, which I'll review. Each row in this file represents a file copied and their status is under the `Result` column. All files that are of `Result == OK` are listed in `files_to_remove.fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533.from_copier.txt`, which can be passed to `clean_workspace.py` for deletion.
+
+```bash
+python clean_workspace.py --clean --namespace vanallen-firecloud-dfci --name An_AnCan --filename files_to_remove.fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533.from_copier.txt
+```
+
+You should then update your data model in the new workspace to point to the new files, which should just be adding the new workspace as a suffix to your paths.

@@ -90,15 +90,17 @@ python clean_workspace.py --clean --namespace BILLING-NAMEPSACE --name TEST-WORK
 Savings are calculated in real time by Google and will be reflected in your monthly bill; however, because Terra only updates the storage estimate display once a day, savings will be observable through the user interface after 24 hours.  
 
 ## copy_bucket.py
-This script will allow you to copy the contents of one bucket to another. The copy produces a log of files copied, named `{original_bucket}-to-{new_bucket}.copy_log.csv`, from Google's [gsutil cp](). This log is then used to create an index file of all files that were successfully copied, to be used with clean_workspace.py to remove the originals. **Please note that the bucket is moved to the new with the parent directory in tact; so, the contents of `gs://fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/` when being moved to `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/` will be located at `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/`.**
+This script will allow you to copy the contents of one bucket to another. The copy produces a log of files copied, named `{original_bucket}-to-{new_bucket}.copy_log.csv`, from Google's [gsutil cp](). This log is then used to create an index file of all files that were successfully copied, to be used with clean_workspace.py to remove the originals. 
+
+**Please note that the bucket is moved to the new with the parent directory in tact; so, the contents of `gs://fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/` when being moved to `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/` will be located at `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/`.**
 
 ### Usage
 Pass the original google bucket address and the new google bucket address to the script `copy_bucket.py`. The prefix `gs://` will be removed if passed.
 
 Required arguments:
 ```bash
-    --original          <string>    Original workspace's bucket
-    --new               <string>    New workspace's bucket
+    --original          <string>    Original workspace bucket
+    --new               <string>    New workspace bucket
 ```
 Optional arguments:
 ```bash

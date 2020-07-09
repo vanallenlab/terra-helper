@@ -27,11 +27,11 @@ cd firecloud-helper
 ```
 
 ### Install Python dependencies
-FireCloud helper uses Python 3.6. We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) and running Python with either [Anaconda](https://www.anaconda.com/download/) or  [Miniconda](https://conda.io/miniconda.html). 
+FireCloud helper uses Python 3.7. We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) and running Python with either [Anaconda](https://www.anaconda.com/download/) or  [Miniconda](https://conda.io/miniconda.html). 
 
 To create a virtual environment and install dependencies with Anaconda or Miniconda, run the following from this repository's directory:
 ```bash
-conda create -y -n firecloud-helper python=3.6
+conda create -y -n firecloud-helper python=3.7
 conda activate firecloud-helper
 pip install -r requirements.txt
 ```

@@ -60,14 +60,12 @@ Optional arguments:
 ```bash
     --filename      <string>    Filename for files to remove, default=files_to_remove.(namespace).(name).txt
     
-    
     --index         <boolean>   Will index workspace for files to remove, write to --filename
     --keeplogs      <boolean>   Boolean for keeping log files for folders not in data model
     
     --clean         <boolean>   Will delete files listed in --filename
-    --chunksize     <int>       Number of files to pass to gsutil at once for parallel deletion, default=500
+    --dryrun        <boolean>   Will not actually delete anything
 ```
-Chunksize is a necessary parameter for `--clean` because operating systems have character limits of how long commands are.
 
 `--clean` will produce a summary of the storage before and after deletion
 ```bash

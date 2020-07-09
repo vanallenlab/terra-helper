@@ -251,12 +251,12 @@ def index(namespace, name, headers, keep_logs, index_name):
     pd.Series(files_to_remove).to_csv(index_name, sep='\t', index=False, header=False)
 
 
-def clean(namespace, name, headers, filename, chunksize, dryrun):
-    summary = pd.Series(name = 'summary',
-                        index = ['namespace', 'name',
-                                 'initial_bucket_size_gb', 'initial_bucket_monthly_cost_$',
-                                 'number_of_files_to_delete',
-                                 'updated_bucket_size_gb', 'updated_bucket_monthly_cost_$'])
+def clean(namespace, name, headers, filename, dryrun):
+    summary = pd.Series(name='summary',
+                        index=['namespace', 'name',
+                               'initial_bucket_size_gb', 'initial_bucket_monthly_cost_$',
+                               'number_of_files_to_delete',
+                               'updated_bucket_size_gb', 'updated_bucket_monthly_cost_$'])
     print('Cleaning up workspace, cleaning bucket')
     print(' '.join(['Namespace:', str(namespace)]))
     print(' '.join(['Name:', str(name)]))
@@ -311,37 +311,11 @@ def clean(namespace, name, headers, filename, chunksize, dryrun):
             print(f'return code: {return_code}, success!')
             print('')
 
-    # Get workspace current storage usage
-    bucket_name = request_workspace.json()['workspace']['bucketName']
-    request_usage = get_bucket_usage(namespace, name, headers)
-    check_r = check_request(request_usage, 'Failed to get workspace bucket usage')
-    if check_r['message'] != 'success!':
-        return print_json(check_r)
-
-    usage_bytes = format_usage(request_usage)
-    usage_gigabytes, usage_terabytes, monthly_cost = calculate_usage(usage_bytes)
-    new_gigabytes = usage_gigabytes
-    new_cost = monthly_cost
-    print(' '.join(['Bucket name:', str(bucket_name)]))
-    print(' '.join(['Storage used (Gigabytes):', str(round(usage_gigabytes, 3))]))
-    print(' '.join(['Monthly cost of storage ($):', str(round(monthly_cost, 2))]))
-    print('')
-
-    summary.loc['updated_bucket_size_gb'] = usage_gigabytes
-    summary.loc['updated_bucket_monthly_cost_$'] = monthly_cost
-
     out_name = '.'.join([namespace, name, 'clean', 'summary', 'txt'])
     summary.to_csv(out_name, sep='\t', header=False)
 
-    difference_gigabytes = initial_gigabytes - new_gigabytes
-    difference_cost = initial_cost - new_cost
-    print(' '.join(['You cleaned up', str(difference_gigabytes), 'of data.']))
-    print(' '.join(['This clean up will save the lab', str(difference_cost), 'per month.']))
-    print('')
-
-    print('Note: You actually did save money!\n'
-          'FireCloud caches the storage costs once per day to save money. Check back tomorrow :)')
-    print('In the meantime, go ask Eli to buy lunch')
+    print('Thank you for cleaning up your workspace! Terra caches the storage costs once per day, so check back '
+          'tomorrow to see how much you have saved.')
     print('')
 
 
@@ -365,8 +339,7 @@ if __name__ == "__main__":
 
     arg_parser.add_argument('--clean', action='store_true',
                             help='Reads --filename and deletes the files')
-    arg_parser.add_argument('--chunksize', default=500,
-                            help='Number of files to remove at once')
+
     arg_parser.add_argument('--dryrun', action='store_true',
                             help='If passed, will clean without deleting files so you can see the output.')
     args = arg_parser.parse_args()
@@ -379,7 +352,6 @@ if __name__ == "__main__":
     input_index = args.index
     input_keeplogs = args.keeplogs
     input_clean = args.clean
-    input_chunksize = int(args.chunksize)
     input_dryrun = args.dryrun
 
     if input_filename == 'files_to_remove.(namespace).(name).txt':
@@ -388,7 +360,7 @@ if __name__ == "__main__":
     if input_index:
         index(input_namespace, input_name, headers, input_keeplogs, input_filename)
     elif input_clean:
-        clean(input_namespace, input_name, headers, input_filename, input_chunksize, input_dryrun)
+        clean(input_namespace, input_name, headers, input_filename, input_dryrun)
     else:
         print('Please specify --index or --clean')
 

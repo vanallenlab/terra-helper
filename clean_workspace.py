@@ -1,9 +1,11 @@
-import time
+
 import argparse
+import io
 import pandas as pd
 import requests
 import subprocess
-import io
+import sys
+import time
 import zipfile
 from oauth2client.client import GoogleCredentials
 
@@ -152,28 +154,38 @@ def glob_bucket(bucket):
     return series.tolist()
 
 
-def remove_files(files_list, chunksize):
-    n = chunksize
-    list_of_lists = [files_list[i * n:(i + 1) * n] for i in range((len(files_list) + n - 1) // n)]
+def remove_files(index_handle):
+    generate_header()
 
-    headers = generate_header()
+    split_handle = index_handle.split('.')
+    namespace = split_handle[1]
+    workspace = split_handle[2]
 
-    counter = 0
-    for chunk in list_of_lists:
-        chunk = ['"' + file.replace(' ', '\ ') + '"' for file in chunk]
-        files = ' '.join(chunk)
-        cmd = ' '.join(['gsutil -m rm', files])
-        proc = subprocess.Popen(cmd, shell=True, 
-                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-        
-        # refresh headers if taking too long
-        if chunksize*counter > 100000:
-            headers = generate_header()
-            counter = 0
+    command = f'cat {index_handle} | gsutil -m rm -I'
+    code, out, err = run_command(command)
 
-    print(str(len(files_list)) + ' files removed')
-    return headers
+    stdout_handle = f'stdout.{namespace}.{workspace}.txt'
+    stderr_handle = f'stderr.{namespace}.{workspace}.txt'
+    save_bytes(stdout_handle, out)
+    save_bytes(stderr_handle, err)
+
+    return code, out, err
+
+
+def run_command(cmd):
+    proc = subprocess.Popen(cmd,
+                            shell=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            )
+    stdout, stderr = proc.communicate()
+    return proc.returncode, stdout, stderr
+
+
+def save_bytes(handle, content):
+    f = open(handle, 'wb')
+    f.write(content)
+    f.close()
 
 
 def index(namespace, name, headers, keep_logs, index_name):
@@ -283,10 +295,21 @@ def clean(namespace, name, headers, filename, chunksize, dryrun):
 
     if dryrun:
         print("This is a dry run, no files will be deleted")
-        headers = headers
     else:
-        print(''.join(['Number of files to delete:', str(len(blobs_to_delete))]))
-        headers = remove_files(blobs_to_delete, chunksize)
+        print(''.join(['Number of files to delete: ', str(len(blobs_to_delete))]))
+        return_code, stdout, stderr = remove_files(filename)
+        if int(return_code) != int(0):
+            print('')
+            print(f'stdout: {stdout}')
+            print(f'stderr: {stderr}')
+            msg = f'Hmm....nonzero return code. Something went wrong...' \
+                  f'Look at the stdout (stdout.{namespace}.{name}.txt) and stderr (stderr.{namespace}.{name}.txt) ' \
+                  f'Unfortunately the stderr does not return which files failed, so maybe rerun indexing and compare ' \
+                  f'the two index files. Let Brendan know if you are having trouble.'
+            sys.exit(msg)
+        else:
+            print(f'return code: {return_code}, success!')
+            print('')
 
     # Get workspace current storage usage
     bucket_name = request_workspace.json()['workspace']['bucketName']
@@ -307,8 +330,8 @@ def clean(namespace, name, headers, filename, chunksize, dryrun):
     summary.loc['updated_bucket_size_gb'] = usage_gigabytes
     summary.loc['updated_bucket_monthly_cost_$'] = monthly_cost
 
-    outname = '.'.join([namespace, name, 'clean', 'summary', 'txt'])
-    summary.to_csv(outname, sep='\t')
+    out_name = '.'.join([namespace, name, 'clean', 'summary', 'txt'])
+    summary.to_csv(out_name, sep='\t', header=False)
 
     difference_gigabytes = initial_gigabytes - new_gigabytes
     difference_cost = initial_cost - new_cost

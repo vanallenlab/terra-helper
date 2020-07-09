@@ -5,9 +5,12 @@ import sys
 import time
 
 
-def copy_bucket(log, source, target, boolean):
-    command = f'gsutil -m cp -L {log} -r gs://{source} gs://{target}/'
-    return run_command(command, boolean)
+def copy_bucket(log, source, target, mirror_boolean, timeout_boolean):
+    if mirror_boolean:
+        command = f'gsutil -m cp -L {log} -r gs://{source}/* gs://{target}'
+    else:
+        command = f'gsutil -m cp -L {log} -r gs://{source} gs://{target}'
+    return run_command(command, timeout_boolean)
 
 
 def run_command(cmd, disable_timeout):
@@ -26,10 +29,10 @@ def run_command(cmd, disable_timeout):
     return proc.returncode, stdout, stderr
 
 
-def copy(original_bucket, new_bucket, disable_timeout_bool):
+def copy(original_bucket, new_bucket, mirror_bool, timeout_bool):
     print('Copying...this could take a while, up to hours, depending on your workspace size.')
     log_handle = f'{original_bucket}-to-{new_bucket}.copy_log.csv'
-    return_code, stdout, stderr = copy_bucket(log_handle, original_bucket, new_bucket, disable_timeout_bool)
+    return_code, stdout, stderr = copy_bucket(log_handle, original_bucket, new_bucket, mirror_bool, timeout_bool)
     if int(return_code) != int(0):
         print('')
         print(f'stdout: {stdout}')
@@ -70,6 +73,8 @@ if __name__ == "__main__":
 
     arg_parser.add_argument('--filename', default='files_to_remove.(original bucket).from_copier.txt',
                             help='Filename for files to remove, can be passed to the cleaner.')
+    arg_parser.add_argument('--mirror', action='store_true',
+                            help='Mirror bucket structure instead of having a folder of the original bucket name.')
     arg_parser.add_argument('--disable_timeout', action='store_true', help='Disable 12 hr timeout from copy')
 
     args = arg_parser.parse_args()

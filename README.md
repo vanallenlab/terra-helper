@@ -92,7 +92,7 @@ Savings are calculated in real time by Google and will be reflected in your mont
 ## copy_bucket.py
 This script will allow you to copy the contents of one bucket to another. The copy produces a log of files copied, named `{original_bucket}-to-{new_bucket}.copy_log.csv`, from Google's [gsutil cp](). This log is then used to create an index file of all files that were successfully copied, to be used with clean_workspace.py to remove the originals. 
 
-**Please note that the bucket is moved to the new with the parent directory in tact; so, the contents of `gs://fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/` when being moved to `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/` will be located at `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/`.**
+By default, `copy_bucket.py` will place the original files in the new bucket under a folder named after the original bucket in the new bucket's parent directory. To change this and just mirror the original bucket, add the parameter `--mirror`. To be specific, the default behavior is such that copying `gs://fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/` to `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/` will be located at `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/`.
 
 ### Usage
 Pass the original google bucket address and the new google bucket address to the script `copy_bucket.py`. The prefix `gs://` will be removed if passed.
@@ -105,6 +105,7 @@ Required arguments:
 Optional arguments:
 ```bash
     --filename          <string>    Filename for files to remove, default=files_to_remove.(original bucket).from_copier.txt
+    --mirror            <boolean>   By default, 
     --disable_timeout   <boolean>   Boolean to disable the 12 hr timeout on gsutil cp 
 ```
 

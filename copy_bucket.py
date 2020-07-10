@@ -82,6 +82,7 @@ if __name__ == "__main__":
     input_original = args.original
     input_new = args.new
     input_filename = args.filename
+    input_mirror = args.mirror
     input_disable_timeout = args.disable_timeout
 
     if input_original[:5] == 'gs://':

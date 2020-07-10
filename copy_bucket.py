@@ -97,7 +97,7 @@ if __name__ == "__main__":
     if input_filename == 'files_to_remove.(original bucket).from_copier.txt':
         input_filename = f'files_to_remove.{input_original}.from_copier.txt'
 
-    log_handle = copy(input_original, input_new, input_disable_timeout)
+    log_handle = copy(input_original, input_new, input_mirror, input_disable_timeout)
     produce_index_for_cleaning(log_handle, input_filename)
 
     end_time = time.time()

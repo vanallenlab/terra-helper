@@ -2,6 +2,7 @@ import argparse
 import pandas
 import subprocess
 import sys
+import shlex
 import time
 
 
@@ -13,7 +14,7 @@ def copy_bucket(log, source, target, mirror_boolean, timeout_boolean):
     return run_command(command, timeout_boolean)
 
 
-def run_command(cmd, disable_timeout):
+def run_command_normal(cmd, disable_timeout):
     proc = subprocess.Popen(cmd,
                             shell=True,
                             stdout=subprocess.PIPE,
@@ -29,14 +30,24 @@ def run_command(cmd, disable_timeout):
     return proc.returncode, stdout, stderr
 
 
+def run_command(command, disable_timeout):
+    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+    while True:
+        output = process.stdout.readline()
+        if output == '' and process.poll() is not None:
+            break
+        if output:
+            print(output.strip())
+    rc = process.poll()
+    return process.returncode
+
+
 def copy(original_bucket, new_bucket, mirror_bool, timeout_bool):
     print('Copying...this could take a while, up to hours, depending on your workspace size.')
     log_handle = f'{original_bucket}-to-{new_bucket}.copy_log.csv'
-    return_code, stdout, stderr = copy_bucket(log_handle, original_bucket, new_bucket, mirror_bool, timeout_bool)
+    return_code = copy_bucket(log_handle, original_bucket, new_bucket, mirror_bool, timeout_bool)
     if int(return_code) != int(0):
         print('')
-        print(f'stdout: {stdout}')
-        print(f'stderr: {stderr}')
         msg = 'Hmm...something went wrong with copying your bucket. Try again or reach out to Brendan. '
         sys.exit(msg)
     else:

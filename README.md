@@ -1,5 +1,5 @@
-# FireCloud helper
-FireCloud helper is a collection of scripts which leverage the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks on [FireCloud](firecloud.org). A more appropriate name for this repository may be `Terra storage helper`, as the platform has since rebranded. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which functions similarly.
+# Firecloud helper
+Terra helper is a collection of scripts which leverage the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks on [Firecloud](firecloud.org). A more appropriate name for this repository may be `Terra storage helper`, as the platform has since rebranded and the scripts pretty much just deal with cleaning up workspaces or moving underlying buckets. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which tries to clean up intermediate files. 
 
 ## Installation
 
@@ -8,12 +8,13 @@ To use terra storage helper, you must have the following set up on your system
 - [Google Cloud SDK](https://cloud.google.com/sdk/)
 - Python 3
 
-Google Cloud and FireCloud use [Google Cloud SDK](https://cloud.google.com/sdk/) to manage authentication. The [application default credentials](https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login) will be used. To login,
+Google Cloud and Terra use [Google Cloud SDK](https://cloud.google.com/sdk/) to manage authentication. The [application default credentials](https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login) will be used. **Please walk through Google's wonderful install and set up documentation if you have not**. To login and set an application default, make sure that you've run the following,
 ```bash
+gcloud auth login
 gcloud auth application-default login
 ```
 
-You may need to export your google cloud auth token
+You may need to export your google cloud auth token, add this to your bash profile:
 ```bash
 export GCS_OAUTH_TOKEN=`gcloud auth application-default print-access-token`
 ```
@@ -43,87 +44,81 @@ source activate firecloud-helper/bin/activate
 pip install -r requirements.txt
 ```
 
-## clean_workspace.py
-This script will remove files from a FireCloud workspace's bucket if they are not present in the data model. The need for this tool arose from the reality that **FireCloud's call-cache passes files by copying, instead of by reference**; this results in duplicate files whenever a method is rerun. You must also have write access on FireCloud to whichever workspace you want to interact with.
+## Deleting old or intermediate files from your workspace
+The script `index_workspace.py` can be used to list all files in a workspace's bucket that either do not appear in the data model or as a workspace annotation. You should then **review the list of files to ensure that there is nothing that you want to actually keep** and you can delete the files with `remove_files.sh`. 
 
-**This should not be used while a submission is running in your workspace.**
+**This should not be used while a submission is running in your workspace and notebooks will not be kept**.
 
 ### Usage
-clean_workspace.py has two modes: `--index` and `--clean`. `--index` will create a list of files to delete from your workspace while `--clean` will delete files. These modules were split to reduce the number of times that `gsutil ls` is being called, [because listing files costs money](https://github.com/vanallenlab/firecloud_helper/issues/2).
+`index_workspace.py` will get the bucket associated with your workspace, pull all elements in the data model and workspace annotations, and take the difference. If `keep_related_files` is passed, any files in the same directory as one either in the datamodel or workspace annotations will also be kept, such as the associated stderr and stdout from any jobs. Outputs will be written to `{namespace}.{name}.files_to_remove.txt`.
 
 Required arguments:
 ```bash
-    --namespace     <string>    Workspace's namespace
-    --name          <string>    Workspace's name
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
 ```
+
 Optional arguments:
 ```bash
-    --filename      <string>    Filename for files to remove, default=files_to_remove.(namespace).(name).txt
-    
-    --index         <boolean>   Will index workspace for files to remove, write to --filename
-    --keeplogs      <boolean>   Boolean for keeping log files for folders not in data model
-    
-    --clean         <boolean>   Will delete files listed in --filename
-    --dryrun        <boolean>   Will not actually delete anything
+    --keep_related_files    <boolean>   Boolean for keeping all contents for folders in data model
 ```
 
-`--clean` will produce a summary of the storage before and after deletion
+`remove_files.sh` will simply pass the provided file, which should be a simple text file listing one file on google cloud per row, to gsutil for deletion. 
+Required arguments:
 ```bash
-    namespace                       namespace_name
-    name                            workspace_name
-    initial_bucket_size_gb          100
-    initial_bucket_monthly_cost_$   5
-    number_of_files_to_delete       20
+    HANDLE                  <string>    File path to list of files for removal
 ```
+### Example
+To clean up the workspace vanallen-firecloud-dfci/Robinson2015_dev, the workspace is first indexed, reviewed, and then passed to `remove_files.sh`. I am also choosing to pass `--keep_related_files` to keep any files in a tail directory included in the workspace's data model or workspace annotations, even though it will significantly add to runtime.
 
-### Example 
-If I want to index and clean a workspace called `TEST-WORKSPACE` under the namespace `BILLING-NAMESPACE`, the following commands would be used. To index,
+Index the workspace:
 ```bash
-python clean_workspace.py --index --namespace BILLING-NAMESPACE --name TEST-WORKSPACE
+python index_workspace.py --namespace vanallen-firecloud-dfci --name Robinson2015_dev --keep_related_files
 ```
-
-This would run and create a file called `files_to_remove.BILLING-NAMESPACE.TEST-WORKSPACE.txt`. This file should be manually inspected as all files in this file will be deleted. After inspection, the following code can be run to delete the contained files,
+Once completed, a file named `vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt` appears in the current working directory. This list of files is reviewed and any files that I want to keep are deleted from the file, maybe I uploaded a PDF or Jupyter notebook to the Google Bucket and I want to keep it. The file is then saved and passed to `remove_files.sh`,
 ```bash
-python clean_workspace.py --clean --namespace BILLING-NAMEPSACE --name TEST-WORKSPACE
+bash remove_files.sh vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt
 ```
+You will be able to watch the progress of your files being deleted. 
 
-Savings are calculated in real time by Google and will be reflected in your monthly bill; however, because Terra only updates the storage estimate display once a day, savings will be observable through the user interface after 24 hours.  
-
-## copy_bucket.py
-This script will allow you to copy the contents of one bucket to another. The copy produces a log of files copied, named `{original_bucket}-to-{new_bucket}.copy_log.csv`, from Google's [gsutil cp](). This log is then used to create an index file of all files that were successfully copied, to be used with clean_workspace.py to remove the originals. 
-
-By default, `copy_bucket.py` will place the original files in the new bucket under a folder named after the original bucket in the new bucket's parent directory. To change this and just mirror the original bucket, add the parameter `--mirror`. To be specific, the default behavior is such that copying `gs://fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/` to `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/` will be located at `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4/fc-944028b3-ba83-4262-a01a-9dd30d1e19e8/`.
-
-### Usage
-Pass the original google bucket address and the new google bucket address to the script `copy_bucket.py`. The prefix `gs://` will be removed if passed.
+## Moving the contents of your workspace's Google bucket elsewhere
+The scripts `copy_bucket.sh` and `copy_bucket-mirror.sh` can be used to copy your workspace's bucket, or really any Google bucket, to another location, either on locally or on Google Cloud. If you want the contents of your original bucket to appear in the root directory of your destination, use `copy_bucket-mirror.sh`. Otherwise, you can use `copy_bucket.sh` and the contents will be copied to the provided destination inside of a folder named after the source bucket, with structure in tact. In both cases, the gsutil copy log will be produced and named as `{SOURCE}-to-{DESTINATION}.gsutil_copy_log.csv`. There have been issues with gsutil not exiting the process upon completion, so, if it is done, just exit. 
 
 Required arguments:
 ```bash
-    --original          <string>    Original workspace bucket
-    --new               <string>    New workspace bucket
+    SOURCE                  <string>    Source Google bucket, with or without the gs:// prefix
+    DESTINATION             <string>    Destination Google bucket, with or without the gs:// prefix
 ```
-Optional arguments:
+If you want to delete the files successfully copied from the source location, you can extract a list of successfully copied files with `list_source_files.py`.
+
+Required arguments:
 ```bash
-    --filename          <string>    Filename for files to remove, default=files_to_remove.(original bucket).from_copier.txt
-    --mirror            <boolean>   By default, 
-    --disable_timeout   <boolean>   Boolean to disable the 12 hr timeout on gsutil cp 
+    --input                 <string>    Path to log file from gsutil
+    --output                <string>    Prefix for output, output will be written to '{output}.files_to_remove.txt'
 ```
 
-Two files will be produced:
-- `{original bucket}-to-{new bucket}.copy_log.csv`, gsutil cp's log of all files copied and their status.
-- `files_to_remove.{original bucket}.from_copier.txt`, an index file of all successfully copied files to be used with `clean_workspace.py`.
-
-There seemed to be an issue with gsutil hanging on the copy from one bucket to another, which _seems_ to be resolved by using Python 3.7. Just in case, I added a 12 hour timeout to the subprocess which runs gsutil cp. If you get timed out, look at the gsutil cp log. If the log was updated recently, your workspace must be huge! I'm sorry, rerun with `--disable_timeout` and thankfully your progress thus far is cached. If the log has _not_ been updated in a very long time then you may have been left hanging. Make sure that you're using Python 3.7 and let me know. 
+`remove_files.sh` will simply pass the provided file, which should be a simple text file listing one file on google cloud per row, to gsutil for deletion. You will be able to watch the progress of your files being deleted. 
+Required arguments:
+```bash
+    HANDLE                  <string>    File path to list of files for removal
+```
 
 ### Example
-To move the contents of the workspace `vanallen-firecloud-dfci/An_AnCan`, `gs://fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533`, to `vanallen-firecloud-dfci/test-migration-workspace`, `gs://fc-0e064e14-e364-4983-84b7-3b2a3900a0c4`, I would do the following:
-```bash
-python copy_bucket.py --original fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533 --new fc-0e064e14-e364-4983-84b7-3b2a3900a0c4
-```
-This will produce a file `fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533-to-fc-0e064e14-e364-4983-84b7-3b2a3900a0c4.copy_log.csv`, which I'll review. Each row in this file represents a file copied and their status is under the `Result` column. All files that are of `Result == OK` are listed in `files_to_remove.fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533.from_copier.txt`, which can be passed to `clean_workspace.py` for deletion.
+To move the workspace vanallen-firecloud-dfci/Robinson2015_dev to vanallen-firecloud-nih/Robinson2015_dev, the buckets of both workspaces are both noted: `gs://fc-f804af42-ded2-4bf2-af24-99d8b6d3b969` and `gs://fc-7894f74c-6827-40ab-a26e-57d0bcb295ce`, respectively. `copy_bucket.sh` is then run to copy the contents of on to the other, though `copy_bucket-mirror.sh` could be run instead if you want the root directories to be exactly the same. The gsutil copy log is then passed to `list_source_files.py` and then passed to `remove_files.sh`. 
 
+`copy_bucket.sh` is run, allowing me to see the status of the copying and recording the progress to `fc-f804af42-ded2-4bf2-af24-99d8b6d3b969-to-fc-7894f74c-6827-40ab-a26e-57d0bcb295ce.gsutil_copy_log.csv`. 
 ```bash
-python clean_workspace.py --clean --namespace vanallen-firecloud-dfci --name An_AnCan --filename files_to_remove.fc-a1b8bf3e-2889-4376-b843-7d6ce04c1533.from_copier.txt
+bash copy_bucket.sh gs://fc-f804af42-ded2-4bf2-af24-99d8b6d3b969 gs://fc-7894f74c-6827-40ab-a26e-57d0bcb295ce
 ```
 
-You should then update your data model in the new workspace to point to the new files, which should just be adding the new workspace as a suffix to your paths.
+The gsutil copy log is then passed to `list_source_files.py` to extract the list of files successfully copied. The output prefix "vanallen-firecloud-dfci.Robinson2015_dev" is passed to specify the prefix for the output file, `vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt`.
+```bash
+python list_source_files.py --input fc-f804af42-ded2-4bf2-af24-99d8b6d3b969-to-fc-7894f74c-6827-40ab-a26e-57d0bcb295ce.gsutil_copy_log.csv --output "vanallen-firecloud-dfci.Robinson2015_dev"
+```
+
+`vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt` is then passed to `remove_files.sh`. Any files passed to `remove_files.sh` will be deleted, but you can pass without review with reasonable confidence because `list_source_files.py` will only list those that were successfully copied.
+```bash
+bash remove_files.sh vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt
+```
+
+You should then update the data model in the new workspace to point to the files. If you copied the data model from your old workspace, you should be able to either find and replace the bucket name or add the new bucket name as a prefix, if you did not mirror.

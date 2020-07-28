@@ -88,6 +88,18 @@ def glob_bucket(bucket):
     return series.tolist()
 
 
+def keep_df_add(df, list_of_keepers, rationale_column):
+    new_index = df.index.union(pd.Index(list_of_keepers))
+    new_df = df.reindex(new_index)
+    new_df.loc[list_of_keepers, rationale_column] = int(1)
+    return new_df
+
+
+def keep_df_create():
+    columns = ['keep-suffix', 'in-datamodel_same-bucket', 'in-datamodel_other-bucket']
+    return pd.DataFrame(0, columns=columns, index=[])
+
+
 def list_paths(list_of_paths):
     paths = ['/'.join(handle.split('/')[:-1]) for handle in list_of_paths]
     return list(set(paths))
@@ -128,10 +140,29 @@ def print_json(data):
         print('')
 
 
+def subset_attributes(bucket_name, entities_list, workspace_list):
+    bucket_id = ''.join(['gs://', bucket_name])
+    combined_list = pd.Series(entities_list + workspace_list).dropna().drop_duplicates()
+
+    idx_in_bucket = combined_list.str[:len(bucket_id)].eq(bucket_id)
+    idx_gs_path = combined_list.str[:5].eq('gs://')
+    idx_other_bucket = ~idx_in_bucket & idx_gs_path
+
+    in_bucket = combined_list[idx_in_bucket]
+    in_other_bucket = combined_list[idx_other_bucket]
+    not_a_path = combined_list[~idx_gs_path]
+    return in_bucket.tolist(), in_other_bucket.tolist(), not_a_path
+
+
 def subset_attributes_in_bucket(bucket_name, entities_list, workspace_list):
     bucket_id = ''.join(['gs://', bucket_name])
     combined_list = entities_list + workspace_list
     return [blob for blob in combined_list if str(blob).startswith(bucket_id)]
+
+
+def subset_attributes_in_other_bucket(in_bucket_attributes, entities_list, workspace_list):
+    combined_list = entities_list + workspace_list
+    return [blob for blob in combined_list if blob not in in_bucket_attributes and str(blob)[:5] == 'gs://']
 
 
 def subset_blobs_for_attribute_paths(paths, all_blobs):
@@ -179,24 +210,43 @@ def index(namespace, name, keeping_related_files, headers):
             entity_dataframe = format_request_to_tsv(entity_tsv.content)
             entity_list = list_datamodel_columns(entity_dataframe)
             datamodel_attributes.extend(entity_list)
-    pd.Series(datamodel_attributes).to_csv('datamodel_attributes.txt', sep='\t', header=False)
     workspace_attributes = list_workspace_attributes(namespace, name, headers)
-    attributes_in_bucket = subset_attributes_in_bucket(bucket_name, datamodel_attributes, workspace_attributes)
+
+    in_bucket, other_bucket, not_a_path = subset_attributes(bucket_name, datamodel_attributes, workspace_attributes)
+    attributes_in_bucket = in_bucket
+    attributes_in_other_bucket = other_bucket
+
+    keep_df = keep_df_create()
+    keep_df = keep_df_add(keep_df, attributes_in_bucket, 'in-datamodel_same-bucket')
+    keep_df = keep_df_add(keep_df, attributes_in_other_bucket, 'in-datamodel_other-bucket')
 
     all_blobs_in_bucket = glob_bucket(bucket_name)
     if keeping_related_files:
         attribute_paths = list_paths(attributes_in_bucket)
         attribute_blobs = subset_blobs_for_attribute_paths(attribute_paths, all_blobs_in_bucket)
         blobs_to_remove = list(set(all_blobs_in_bucket) - set(attribute_blobs))
+        keep_df = keep_df_add(keep_df, attribute_blobs, 'in-datamodel_same-bucket')
     else:
         blobs_to_remove = list(set(all_blobs_in_bucket) - set(attributes_in_bucket))
 
     print(f"Total files in {namespace}/{name}'s bucket: {len(all_blobs_in_bucket)}")
     print(f"Total files to delete in {namespace}/{name}'s bucket: {len(blobs_to_remove)}")
     print(f"Writing files to remove to {namespace}.{name}.files_to_remove.txt in current working directory")
-
     output = f"{namespace}.{name}.files_to_remove.txt"
     pd.Series(blobs_to_remove).to_csv(output, sep='\t', index=False, header=False)
+    print('')
+
+    print(f"Total files in {namespace}/{name}'s data model that are not in `files_to_remove`: {keep_df.shape[0]}")
+    print(f"Writing this list to {namespace}.{name}.files_keep.txt in current working directory")
+    output_keeps = f"{namespace}.{name}.files_keep.txt"
+    keep_df.to_csv(output_keeps, sep='\t', index_label='file')
+    print('')
+
+    print(f'Some data model elements were not paths, these have been written to '
+          f'{namespace}/{name}.datamodel_not_paths.txt in the current working directory.')
+    output_not_paths = f"{namespace}.{name}.datamodel_not_paths.txt"
+    not_a_path.to_csv(output_not_paths, sep='\t', index=False, header=False)
+    print('')
 
 
 if __name__ == "__main__":

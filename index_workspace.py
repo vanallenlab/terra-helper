@@ -263,8 +263,9 @@ def index(namespace, name, keeping_related_files, headers, suffixes):
     print('')
 
     idx_keep_in_remove = pd.Series(keep_df.index.tolist()).isin(blobs_to_remove)
-    print(f'Number of files in files_keep that are in files_to_remove, if this has any True values then tell Brendan!')
-    print(idx_keep_in_remove)
+    print('Number of files in files_keep that are in files_to_remove, if this has any True values then post an issue '
+          'and do not delete your files!')
+    print(idx_keep_in_remove.value_counts())
 
 
 if __name__ == "__main__":

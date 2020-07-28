@@ -262,6 +262,10 @@ def index(namespace, name, keeping_related_files, headers, suffixes):
     not_a_path.to_csv(output_not_paths, sep='\t', index=False, header=False)
     print('')
 
+    idx_keep_in_remove = pd.Series(keep_df.index.tolist()).isin(blobs_to_remove)
+    print(f'Number of files in files_keep that are in files_to_remove, if this has any True values then tell Brendan!')
+    print(idx_keep_in_remove)
+
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(prog='Index Terra workspace',

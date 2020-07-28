@@ -165,6 +165,16 @@ def subset_attributes_in_other_bucket(in_bucket_attributes, entities_list, works
     return [blob for blob in combined_list if blob not in in_bucket_attributes and str(blob)[:5] == 'gs://']
 
 
+def subset_blobs_by_suffix(list_blobs, suffixes):
+    series = pd.Series(list_blobs)
+    remove_blobs = series.copy(deep=True)
+    for suffix in suffixes:
+        idx_suffix = remove_blobs.str[-len(suffix):].eq(suffix)
+        remove_blobs = remove_blobs[~idx_suffix]
+    keep_blobs = series[~series.isin(remove_blobs)]
+    return keep_blobs.tolist(), remove_blobs.tolist()
+
+
 def subset_blobs_for_attribute_paths(paths, all_blobs):
     datamodel_blobs = []
     for path in paths:
@@ -172,7 +182,7 @@ def subset_blobs_for_attribute_paths(paths, all_blobs):
     return datamodel_blobs
 
 
-def index(namespace, name, keeping_related_files, headers):
+def index(namespace, name, keeping_related_files, headers, suffixes):
     print(f'Indexing {namespace}/{name}')
     print("All files in the workspace's bucket that do not either appear in the data model or as a workspace "
           "annotation will be listed. Please do not have any running jobs.")
@@ -229,6 +239,10 @@ def index(namespace, name, keeping_related_files, headers):
     else:
         blobs_to_remove = list(set(all_blobs_in_bucket) - set(attributes_in_bucket))
 
+    if suffixes:
+        keep_blobs, blobs_to_remove = subset_blobs_by_suffix(blobs_to_remove, suffixes)
+        keep_df = keep_df_add(keep_df, keep_blobs, 'keep-suffix')
+
     print(f"Total files in {namespace}/{name}'s bucket: {len(all_blobs_in_bucket)}")
     print(f"Total files to delete in {namespace}/{name}'s bucket: {len(blobs_to_remove)}")
     print(f"Writing files to remove to {namespace}.{name}.files_to_remove.txt in current working directory")
@@ -257,13 +271,21 @@ if __name__ == "__main__":
                             help='Workspace namespace')
     arg_parser.add_argument('--name', required=True,
                             help='Workspace name')
+    arg_parser.add_argument('--keep', '-k', nargs='*', action='append', default=[],
+                            help='File suffixes to keep')
     arg_parser.add_argument('--keep_related_files', action='store_true',
                             help='Files in all tail directories will be kept if passed, significantly adds to runtime.')
     args = arg_parser.parse_args()
 
     input_namespace = args.namespace
     input_name = args.name
+    input_keep_suffixes = args.keep
     input_keep_related_files = args.keep_related_files
     HEADERS = generate_header()
 
-    index(input_namespace, input_name, input_keep_related_files, HEADERS)
+    if input_keep_suffixes:
+        keep_suffixes = [suffix[0] for suffix in input_keep_suffixes]
+    else:
+        keep_suffixes = []
+
+    index(input_namespace, input_name, input_keep_related_files, HEADERS, keep_suffixes)

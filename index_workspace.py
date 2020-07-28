@@ -30,7 +30,7 @@ def check_request(response, failure_message):
 
 
 def format_request_to_tsv(string_tsv):
-    return pd.read_csv(io.StringIO(string_tsv.decode('utf-8')), sep='\t')
+    return pd.read_csv(io.StringIO(string_tsv.decode('utf-8')), sep='\t', low_memory=False)
 
 
 def format_usage(response):
@@ -61,8 +61,14 @@ def get_entity_type_datamodel(namespace, name, headers, entity_type):
 def get_entity_type_set_datamodel(namespace, name, headers, entity_type):
     response = get_entity_type_datamodel(namespace, name, headers, entity_type)
     z = zipfile.ZipFile(io.BytesIO(response.content))
-    filename = '_'.join([entity_type, 'membership.tsv'])
-    return z.read(filename)
+    data_model_attributes = []
+    for suffix in ['membership.tsv', 'entity.tsv']:
+        filename = f'{entity_type}_{suffix}'
+        table = z.read(filename)
+        entity_data_frame = format_request_to_tsv(table)
+        entity_list = list_datamodel_columns(entity_data_frame)
+        data_model_attributes.extend(entity_list)
+    return data_model_attributes
 
 
 def get_workspace(namespace, name, headers):
@@ -166,14 +172,14 @@ def index(namespace, name, keeping_related_files, headers):
     datamodel_attributes = []
     for entity_type in entity_types:
         if (entity_type == 'sample_set') | (entity_type == 'pair_set') | (entity_type == 'participant_set'):
-            entity_tsv = get_entity_type_set_datamodel(namespace, name, headers, entity_type)
-            entity_dataframe = format_request_to_tsv(entity_tsv)
+            entity_type_attributes = get_entity_type_set_datamodel(namespace, name, headers, entity_type)
+            datamodel_attributes.extend(entity_type_attributes)
         else:
             entity_tsv = get_entity_type_datamodel(namespace, name, headers, entity_type)
             entity_dataframe = format_request_to_tsv(entity_tsv.content)
-        entity_list = list_datamodel_columns(entity_dataframe)
-        datamodel_attributes.extend(entity_list)
-
+            entity_list = list_datamodel_columns(entity_dataframe)
+            datamodel_attributes.extend(entity_list)
+    pd.Series(datamodel_attributes).to_csv('datamodel_attributes.txt', sep='\t', header=False)
     workspace_attributes = list_workspace_attributes(namespace, name, headers)
     attributes_in_bucket = subset_attributes_in_bucket(bucket_name, datamodel_attributes, workspace_attributes)
 

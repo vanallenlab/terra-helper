@@ -71,6 +71,12 @@ def get_entity_type_set_datamodel(namespace, name, headers, entity_type):
     return data_model_attributes
 
 
+def get_gsutil_path():
+    cmd = "which gsutil"
+    path = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
+    return path.decode("utf-8").replace("\n", "")
+
+
 def get_workspace(namespace, name, headers):
     request = '/'.join([root, 'workspaces', namespace, name])
     return requests.get(request, headers=headers)
@@ -82,7 +88,7 @@ def get_workspace_attributes(namespace, name, headers):
 
 
 def glob_bucket(bucket):
-    cmd = ''.join(['gsutil ls gs://', bucket, '/**'])
+    cmd = ''.join([get_gsutil_path(), ' ls gs://', bucket, '/**'])
     bucket_files = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
     series = pd.read_csv(io.StringIO(bucket_files.decode('utf-8')), sep='\n', header=None).loc[:, 0]
     return series.tolist()
@@ -144,8 +150,8 @@ def subset_attributes(bucket_name, entities_list, workspace_list):
     bucket_id = ''.join(['gs://', bucket_name])
     combined_list = pd.Series(entities_list + workspace_list).dropna().drop_duplicates()
 
-    idx_in_bucket = combined_list.str[:len(bucket_id)].eq(bucket_id)
-    idx_gs_path = combined_list.str[:5].eq('gs://')
+    idx_in_bucket = combined_list.astype(str).str[:len(bucket_id)].eq(bucket_id)
+    idx_gs_path = combined_list.astype(str).str[:5].eq('gs://')
     idx_other_bucket = ~idx_in_bucket & idx_gs_path
 
     in_bucket = combined_list[idx_in_bucket]

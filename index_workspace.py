@@ -188,6 +188,16 @@ def subset_blobs_for_attribute_paths(paths, all_blobs):
     return datamodel_blobs
 
 
+def remove_logs_from_blobs(paths):
+    log_files = ['stderr', 'stdout', 'script', 'rc', 'output',
+                 'gcs_delocalization.sh', 'gcs_localization.sh', 'gcs_transfer.sh']
+    series = pd.Series(paths)
+    idx_system = series.astype(str).str.split('/').apply(lambda x: x[-1]).isin(log_files)
+    idx_log = series.astype(str).str[-3:].eq('log')
+    idx = idx_system | idx_log
+    return series[~idx].tolist()
+
+
 def index(namespace, name, keeping_related_files, headers, suffixes):
     print(f'Indexing {namespace}/{name}')
     print("All files in the workspace's bucket that do not either appear in the data model or as a workspace "
@@ -249,11 +259,19 @@ def index(namespace, name, keeping_related_files, headers, suffixes):
         keep_blobs, blobs_to_remove = subset_blobs_by_suffix(blobs_to_remove, suffixes)
         keep_df = keep_df_add(keep_df, keep_blobs, 'keep-suffix')
 
+    blobs_to_remove_no_logs = remove_logs_from_blobs(blobs_to_remove)
+
     print(f"Total files in {namespace}/{name}'s bucket: {len(all_blobs_in_bucket)}")
     print(f"Total files to delete in {namespace}/{name}'s bucket: {len(blobs_to_remove)}")
     print(f"Writing files to remove to {namespace}.{name}.files_to_remove.txt in current working directory")
     output = f"{namespace}.{name}.files_to_remove.txt"
     pd.Series(blobs_to_remove).to_csv(output, sep='\t', index=False, header=False)
+    print('')
+
+    print(f"Total files to delete, after removing logs, in {namespace}/{name}'s bucket: {len(blobs_to_remove_no_logs)}")
+    print(f"Writing files to remove to {namespace}.{name}.files_to_remove.no_logs.txt in current working directory")
+    output = f"{namespace}.{name}.files_to_remove.no_logs.txt"
+    pd.Series(blobs_to_remove_no_logs).to_csv(output, sep='\t', index=False, header=False)
     print('')
 
     print(f"Total files in {namespace}/{name}'s data model that are not in `files_to_remove`: {keep_df.shape[0]}")

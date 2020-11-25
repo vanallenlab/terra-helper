@@ -20,9 +20,14 @@ while read -r source_bucket destination_bucket workspace_namespace workspace_nam
   destination=${destination_bucket//$prefix/}
   log_prefix="$source-to-$destination"
   log="$log_prefix".gsutil_copy_log.csv
+  files_to_remove="$workspace_namespace"."$workspace_name".files_to_remove.txt
 
   bash copy_bucket.sh "$source_bucket" "$destination_bucket"
   python list_source_files.py --input "$log" --output "$workspace_namespace.$workspace_name"
-  bash remove_files.sh "$workspace_namespace"."$workspace_name".files_to_remove.txt
-  gsutil -m cp "$log" "$workspace_namespace"."$workspace_name".files_to_remove.txt gs://"$source"
+  bash remove_files.sh "$files_to_remove"
+  gsutil -m cp "$log" "$files_to_remove" gs://"$source"
+
+  if gsutil ls gs://"$source"/"$log" | grep -q "$log"; then rm "$log"; fi
+  if gsutil ls gs://"$source"/"$files_to_remove" | grep -q "$log"; then rm "$files_to_remove"; fi
+
 done < "$ARCHIVE_LIST"

@@ -312,9 +312,11 @@ if __name__ == "__main__":
     input_keep_related_files = args.keep_related_files
     HEADERS = generate_header()
 
+    default_keep_suffixes = ['.ipynb']
     if input_keep_suffixes:
         keep_suffixes = [suffix[0] for suffix in input_keep_suffixes]
     else:
         keep_suffixes = []
+    keep_suffixes += default_keep_suffixes
 
     index(input_namespace, input_name, input_keep_related_files, HEADERS, keep_suffixes)

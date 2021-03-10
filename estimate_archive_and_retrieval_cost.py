@@ -5,7 +5,8 @@ import index_workspace
 root = 'https://api.firecloud.org/api'
 
 # https://cloud.google.com/storage/pricin
-# STORAGE COSTS  costs are GB per month
+# STORAGE COSTS
+# costs are GiB per month
 
 US = 'us'
 US_CENTRAL = 'us-central1'
@@ -17,7 +18,7 @@ ARCHIVE = 'archive'
 LOCATIONS = [US, US_CENTRAL]
 STORAGE_TYPES = [STANDARD, NEARLINE, COLDLINE, ARCHIVE]
 
-STORAGE_COSTS = {
+STORAGE_COSTS = {  # per GiB
     US: {
         STANDARD: 0.026,
         NEARLINE: 0.010,
@@ -32,13 +33,19 @@ STORAGE_COSTS = {
     }
 }
 
-# NETWORK EGRESS COSTS, cost per GB
+# NETWORK EGRESS COSTS, cost per GiB
 NETWORK = {
-    US: 0,  # US TO CENTRAL
-    US_CENTRAL: 0.01  # CENTRAL TO US
+    US: {
+        US: 0.00,
+        US_CENTRAL: 0.01
+    },
+    US_CENTRAL: {
+        US: 0.01,
+        US_CENTRAL: 0.00
+    }
 }
 # https://cloud.google.com/storage/pricing#network-pricing
-# network egress suggests multi region > region is free but not region > multi region
+# moving between locations costs $0.01 / GiB
 
 MINIMUM_DURATION = {
     STANDARD: 0,
@@ -99,8 +106,8 @@ def calculate_fees(network, a_operations, retrieval):
     # fees to retrieve from multi regional standard = network_from + operations_from + retrieval
     fees_dataframes = []
     for location in LOCATIONS:
-        archive_fees_network = network[US]  # Cost to archive from Terra (multi regional)
-        retrieval_fees_network = network[location]  # Cost to retrieve from location
+        archive_fees_network = network[US][location]  # Cost to archive from Terra (multi regional)
+        retrieval_fees_network = network[location][US]  # Cost to retrieve from location to Terra
         for storage_type in STORAGE_TYPES:
             archive_fees_a_operations = a_operations[storage_type]  # Cost to archive to new storage type
             retrieval_fees_a_operations = a_operations[STANDARD]  # Cost to retrieve to Terra (standard)
@@ -126,11 +133,18 @@ def calculate_fees(network, a_operations, retrieval):
     return pd.concat(fees_dataframes).iloc[:, 1:]
 
 
-def calculate_network_charges(usage_gigabytes):
+def calculate_network_charges(usage_binary_gigabytes):
     # NETWORK CHARGES: https://cloud.google.com/storage/pricing#network-pricing
+    # dictionary ordered as {source location: {destination location: cost}}
     return {
-        US: NETWORK[US] * usage_gigabytes,
-        US_CENTRAL: NETWORK[US_CENTRAL] * usage_gigabytes
+        US: {
+            US: NETWORK[US][US] * usage_binary_gigabytes,
+            US_CENTRAL: NETWORK[US][US_CENTRAL] * usage_binary_gigabytes
+        },
+        US_CENTRAL: {
+            US: NETWORK[US_CENTRAL][US] * usage_binary_gigabytes,
+            US_CENTRAL: NETWORK[US_CENTRAL][US_CENTRAL] * usage_binary_gigabytes
+        }
     }
 
 
@@ -143,19 +157,19 @@ def calculate_operations_charges(number_of_files, operations_cost_dictionary):
     return dictionary
 
 
-def calculate_retrieval_charges(usage_gigabytes):
+def calculate_retrieval_charges(usage_binary_gigabytes):
     # https://cloud.google.com/storage/pricing#archival-pricing
     dictionary = {}
     for storage_type in STORAGE_TYPES:
-        dictionary[storage_type] = RETRIEVAL_COST[storage_type] * usage_gigabytes
+        dictionary[storage_type] = RETRIEVAL_COST[storage_type] * usage_binary_gigabytes
     return dictionary
 
 
-def calculate_storage_charges(usage_gigabytes):
+def calculate_storage_charges(usage_binary_gigabytes):
     costs = []
     for location in LOCATIONS:
         for storage_type in STORAGE_TYPES:
-            costs.append((location, storage_type, STORAGE_COSTS[location][storage_type] * usage_gigabytes))
+            costs.append((location, storage_type, STORAGE_COSTS[location][storage_type] * usage_binary_gigabytes))
     return costs
 
 
@@ -179,6 +193,33 @@ def calculate_storage_charges_over_time(time_scale, storage):
     return pd.concat([df, costs], axis=1)
 
 
+def calculate_intersections(dataframe):
+    df = dataframe.copy(deep=True)
+    df = df.drop('day storage cost', axis=1)
+    intersections = []
+    for location in LOCATIONS:
+        for storage_type in STORAGE_TYPES:
+            if location == US and storage_type == STANDARD:
+                continue
+            destination = df.loc[(location, storage_type)]
+            intersection = destination[destination.le(df.loc[('us', 'standard')])].index[0]
+            intersections.append({'location': location,
+                                  'storage_type': storage_type,
+                                  'days until less expensive than Terra': intersection})
+    return pd.DataFrame(intersections)
+
+
+def calculate_usage(usage_bytes):
+    # https://cloud.google.com/storage/pricing#storage-notes
+    gigabytes = float(usage_bytes) / 10**9
+    gibibytes = float(usage_bytes) / 2**30  # also known as binary gigabyte
+    return gigabytes, gibibytes
+
+
+def calculate_usage_monthly_charges(usage_gigabytes):
+    return usage_gigabytes * 0.026
+
+
 def create_page_information(dictionary, n_blobs, n_blobs_no_logs):
     series = pd.Series(dictionary)
     series.loc['number of files'] = n_blobs
@@ -187,7 +228,7 @@ def create_page_information(dictionary, n_blobs, n_blobs_no_logs):
 
 
 def create_page_network_costs(dictionary):
-    return pd.Series(dictionary)
+    return pd.DataFrame(dictionary)
 
 
 def create_page_operations_costs(dictionary_logs, dictionary_no_logs, n, n_no_logs):
@@ -200,15 +241,15 @@ def create_page_operations_costs(dictionary_logs, dictionary_no_logs, n, n_no_lo
 def create_page_recommendations(dataframe):
     recommendations = []
     dataframe.columns = [str(column) for column in dataframe.columns]
-    for day in ['7', '15', '30', '45', '60', '90', '180', '360', '540']:
+    for day in ['7', '15', '30', '45', '60', '90', '120', '150', '180', '270', '360', '540']:
         location, storage_type, cumulative_cost = extract_recommendation(dataframe, day)
         terra_cost = dataframe.loc[(US, STANDARD), day]
         savings = cumulative_cost - terra_cost
         dictionary = {'days archived': day,
-                      'location': location,
-                      'storage type': storage_type,
-                      'cumulative cost in recommended storage': cumulative_cost,
-                      'cumulative cost in Terra': terra_cost,
+                      'recommended location': location,
+                      'recommended storage type': storage_type,
+                      'cumulative cost in recommended storage (archive and retrieval fees included)': cumulative_cost,
+                      'cumulative cost to remain in Terra': terra_cost,
                       'cost difference relative to Terra': savings
                       }
         recommendations.append(dictionary)
@@ -250,13 +291,17 @@ def request_workspace(namespace, name):
         return index_workspace.print_json(check_r)
 
     usage_bytes = index_workspace.format_usage(request_usage)
-    usage_gigabytes, usage_terabytes, monthly_cost = index_workspace.calculate_usage(usage_bytes)
+    usage_gigabytes, usage_binary_gigabytes = calculate_usage(usage_bytes)
+    terra_reported_monthly_cost = calculate_usage_monthly_charges(usage_gigabytes)
+    actual_monthly_cost = calculate_usage_monthly_charges(usage_binary_gigabytes)
     return {
         'namespace': namespace,
         'name': name,
         'bucket_name': bucket_name,
         'usage_gigabytes': usage_gigabytes,
-        'monthly_cost': monthly_cost
+        'usage_binary_gigabytes': usage_binary_gigabytes,
+        'terra_reported_monthly_cost': terra_reported_monthly_cost,
+        'actual_monthly_cost': actual_monthly_cost
     }
 
 
@@ -267,15 +312,18 @@ if __name__ == "__main__":
                             help='Workspace namespace')
     arg_parser.add_argument('--name', required=True,
                             help='Workspace name')
+    arg_parser.add_argument('--print', action='store_true')
     args = arg_parser.parse_args()
 
     input_namespace = args.namespace
     input_name = args.name
+    print_enabled = args.print
 
     workspace = request_workspace(input_namespace, input_name)
-    storage_costs = calculate_storage_charges(workspace['usage_gigabytes'])
-    network_costs = calculate_network_charges(workspace['usage_gigabytes'])
-    retrieval_costs = calculate_retrieval_charges(workspace['usage_gigabytes'])
+
+    storage_costs = calculate_storage_charges(workspace['usage_binary_gigabytes'])
+    network_costs = calculate_network_charges(workspace['usage_binary_gigabytes'])
+    retrieval_costs = calculate_retrieval_charges(workspace['usage_binary_gigabytes'])
 
     storage_costs_monthly = calculate_storage_charges_over_time('month', storage_costs)
     storage_costs_daily = calculate_storage_charges_over_time('day', storage_costs)
@@ -285,20 +333,22 @@ if __name__ == "__main__":
     class_a_operation_costs_no_logs = calculate_operations_charges(len(blobs_no_logs), OPERATION_A_COST)
     fees = calculate_fees(network_costs, class_a_operation_costs, retrieval_costs)
 
-    # Adjust daily storage prices for minimum storage duration and then also add fees of archiving and retrieval
+    # We adjust daily storage prices for minimum storage duration and then also add fees of archiving and retrieval
     storage_costs_daily_min_duration = adjust_daily_storage_charge(storage_costs_daily)
     storage_costs_daily_with_fees = adjust_storage_charge_fees('day', storage_costs_daily_min_duration, fees)
 
-    print(workspace)
-    print(storage_costs)
-    print(network_costs)
-    print(retrieval_costs)
-    print(len(blobs), class_a_operation_costs)
-    print(len(blobs_no_logs), class_a_operation_costs_no_logs)
-#    print(fees)
+    if print_enabled:
+        print(workspace)
+        print(storage_costs)
+        print(network_costs)
+        print(retrieval_costs)
+        print(len(blobs), class_a_operation_costs)
+        print(len(blobs_no_logs), class_a_operation_costs_no_logs)
+        print(fees)
 
     page_information = create_page_information(workspace, len(blobs), len(blobs_no_logs))
     page_recommendations = create_page_recommendations(storage_costs_daily_with_fees)
+    page_intersections = calculate_intersections(storage_costs_daily_with_fees)
     page_storage = create_page_storage_costs(storage_costs)
     page_network = create_page_network_costs(network_costs)
     page_retrieval = create_page_retrieval_costs(retrieval_costs)
@@ -310,11 +360,12 @@ if __name__ == "__main__":
     page_fees = fees.copy(deep=True)
 
     output_name = f'{input_namespace}.{input_name}.cost-estimates'
-    with pd.ExcelWriter(f'{output_name}.xlsx') as writer:
+    with pd.ExcelWriter(f'{output_name}.full.xlsx') as writer:
         page_information.to_excel(writer, sheet_name='Workspace information', header=False)
         page_recommendations.to_excel(writer, sheet_name='Recommendations', index=False)
+        page_intersections.to_excel(writer, sheet_name='Intersections', index=False)
         page_storage.to_excel(writer, sheet_name='Storage costs', index=False)
-        page_network.to_excel(writer, sheet_name='Network costs', header=False)
+        page_network.to_excel(writer, sheet_name='Network costs')
         page_retrieval.to_excel(writer, sheet_name='Retrieval costs', header=False)
         page_class_a_operations.to_excel(writer, sheet_name='Class A operations gsutil cp')
         page_fees.to_excel(writer, sheet_name='Fees')
@@ -322,5 +373,10 @@ if __name__ == "__main__":
         storage_costs_daily.to_excel(writer, sheet_name='daily storage cost')
         storage_costs_daily_min_duration.to_excel(writer, sheet_name='daily, adj. min duration')
         storage_costs_daily_with_fees.to_excel(writer, sheet_name='daily adj min duration w fees')
+
+    with pd.ExcelWriter(f'{output_name}.xlsx') as writer:
+        page_information.to_excel(writer, sheet_name='Workspace information', header=False)
+        page_recommendations.to_excel(writer, sheet_name='Recommendations', index=False)
+        page_intersections.to_excel(writer, sheet_name='Intersections', index=False)
 
     # I can imagine this perhaps being better suited to a flask report with an inline plot of cumulative cost

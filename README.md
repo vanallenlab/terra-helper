@@ -1,5 +1,5 @@
 # Terra helper
-Terra helper is a collection of scripts which leverage the [FireCloud API](https://api.firecloud.org) to perform cumbersome tasks on [Terra](https://app.terra.bio/#workspaces). A more appropriate name for this repository may be `Terra storage helper`, as the scripts pretty much just deal with cleaning up workspaces or moving underlying buckets. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which tries to clean up intermediate files. 
+Terra helper is a collection of scripts which leverage the [Terra API](https://api.firecloud.org) to perform cumbersome tasks on [Terra](https://app.terra.bio/#workspaces). A more appropriate name for this repository may be `Terra storage helper`, as the scripts pretty much just deal with cleaning up workspaces or moving underlying buckets. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which tries to clean up intermediate files. 
 
 ## Installation
 
@@ -32,8 +32,8 @@ Terra helper uses Python 3.7. We recommend using a [virtual environment](https:/
 
 To create a virtual environment and install dependencies with Anaconda or Miniconda, run the following from this repository's directory:
 ```bash
-conda create -y -n firecloud-helper python=3.7
-conda activate firecloud-helper
+conda create -y -n terra-helper python=3.7
+conda activate terra-helper
 pip install -r requirements.txt
 ```
 

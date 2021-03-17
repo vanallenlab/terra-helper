@@ -202,10 +202,14 @@ def calculate_intersections(dataframe):
             if location == US and storage_type == STANDARD:
                 continue
             destination = df.loc[(location, storage_type)]
-            intersection = destination[destination.le(df.loc[('us', 'standard')])].index[0]
+            intersection = destination[destination.le(df.loc[('us', 'standard')])].index
+            if intersection.shape[0] > 0:
+                minimum_days = intersection[0]
+            else:
+                minimum_days = pd.NA
             intersections.append({'location': location,
                                   'storage_type': storage_type,
-                                  'days until less expensive than Terra': intersection})
+                                  'days until less expensive than Terra': minimum_days})
     return pd.DataFrame(intersections)
 
 
@@ -351,12 +355,12 @@ if __name__ == "__main__":
     page_intersections = calculate_intersections(storage_costs_daily_with_fees)
     page_storage = create_page_storage_costs(storage_costs)
     page_network = create_page_network_costs(network_costs)
-    page_retrieval = create_page_retrieval_costs(retrieval_costs)
     page_class_a_operations = create_page_operations_costs(class_a_operation_costs,
                                                            class_a_operation_costs_no_logs,
                                                            len(blobs),
                                                            len(blobs_no_logs)
                                                            )
+    page_retrieval = create_page_retrieval_costs(retrieval_costs)
     page_fees = fees.copy(deep=True)
 
     output_name = f'{input_namespace}.{input_name}.cost-estimates'
@@ -366,8 +370,8 @@ if __name__ == "__main__":
         page_intersections.to_excel(writer, sheet_name='Intersections', index=False)
         page_storage.to_excel(writer, sheet_name='Storage costs', index=False)
         page_network.to_excel(writer, sheet_name='Network costs')
-        page_retrieval.to_excel(writer, sheet_name='Retrieval costs', header=False)
         page_class_a_operations.to_excel(writer, sheet_name='Class A operations gsutil cp')
+        page_retrieval.to_excel(writer, sheet_name='Retrieval costs', header=False)
         page_fees.to_excel(writer, sheet_name='Fees')
         storage_costs_monthly.to_excel(writer, sheet_name='monthly storage cost')
         storage_costs_daily.to_excel(writer, sheet_name='daily storage cost')

@@ -22,6 +22,7 @@ if __name__ == "__main__":
     subset = subset_copy_log(log)
 
     print(f'{subset.shape[0]} files successfully copied of {log.shape[0]} attempted.')
+    print(f'{subset["Bytes Transferred"].sum()} bytes successfully copied of {log["Source Size"].sum()} attempted.')
     print(f'Writing output to {output} in the current working directory.')
 
     subset['Source'].to_csv(output, sep='\t', index=False, header=False)

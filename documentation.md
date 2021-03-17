@@ -1,15 +1,15 @@
 # Documentation for Terra helper
 ## Table of Contents
-- [copy_bucket.sh](#copy-bucketsh)
-- [copy_bucket-mirror.sh](#copy-bucket-mirrorsh)
-- [copy_multiple_buckets.sh](#copy-multiple_bucketssh)
-- [estimate_archive_and_retrieval_cost.py](#estimate-archive-and-retrieval-costpy)
-- [get_file_sizes.sh](#get-file-sizessh)
-- [index_workspace.py](#index-workspacepy)
-- [list_source_files.py](#list-source-filespy)
-- [list_workspaces_to_archive.py](#list-workspaces-to-archivepy)
-- [remove_files.sh](#remove-filessh)
-- [restore_bucket.sh](#restore-bucketsh)
+- [copy_bucket.sh](#copy_bucketsh)
+- [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
+- [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
+- [estimate_archive_and_retrieval_cost.py](#estimate_archive_and_retrieval_costpy)
+- [get_file_sizes.sh](#get_file_sizessh)
+- [index_workspace.py](#index_workspacepy)
+- [list_source_files.py](#list_source_filespy)
+- [list_workspaces_to_archive.py](#list_workspaces_to_archivepy)
+- [remove_files.sh](#remove_filessh)
+- [restore_bucket.sh](#restore_bucketsh)
 
 ## copy_bucket.sh
 `copy_bucket.sh` will copy the contents of one bucket to another. Contents of the source bucket will be placed in folder named after the source bucket within the destination bucket, with folder structure mirrored. Specifically, the following will result in passing `fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af` as a source bucket and `terra-workspace-archive-us-central1` as the destination bucket:

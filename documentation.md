@@ -79,7 +79,7 @@ Required arguments:
 Outputs produced:
 This script will copy logs and produced outputs to the source and destination buckets. If successfully copied to the source, they will be removed locally. 
 
-### Example
+Example
 ```bash
 bash copy_multiple_buckets.sh buckets_to_move.txt
 ```
@@ -88,6 +88,44 @@ where `buckets_to_move` may be produced by `list_workspaces_to_archive.py`.
 [Back to table of contents](#table-of-contents)
 
 ## estimate_archive_and_retrieval_costs.py
+`estimate_archive_and_retrieval_costs.py` is used to calculate the cost-effectiveness of _moving data out of_ and _returning it_ to Terra, given how many days a workspace and its underlying data remains inactive and not accessed. We calculate the number of days required for each location and storage type available on Google Cloud to be more cost effective than just leaving the data in Terra, which uses the most expensive storage (US multi regional, standard) and does not allow users to take advantage of Google's lifecycle policies. See [this slideshow](https://docs.google.com/presentation/d/1y_KxBDum8xNs89llKkdn6bgieBjgSuI3qP7P-Xdeo9A/edit?usp=sharing) for more information.
+
+### Usage
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
+```
+
+Optional arguments:
+```bash
+    --print                 <boolean>   boolean flag to print information for a workspace
+```
+
+Outputs produced:
+See [this slideshow for more information](https://docs.google.com/presentation/d/1y_KxBDum8xNs89llKkdn6bgieBjgSuI3qP7P-Xdeo9A/edit?usp=sharing). In short, two excels documents are produced which contain the following sheets:
+- Output named `{namespace}.{name}.cost_estimates.xlsx`
+  - Workspace information, metadata for the workspace such as bucket size and monthly costs
+  - Recommendations, recommended (most cost effective) location and storage type and cost savings relative to Terra for a set of days [7, 15, 30, 45, ...]
+  - Intersections, how many days inactive are required for each location and storage type to be cost effective relative to Terra
+- Output named `{namespace}.{name}.cost_estimates.full.xlsx`
+  - Workspace information, metadata for the workspace such as bucket size and monthly costs
+  - Recommendations, recommended (most cost effective) location and storage type and cost savings relative to Terra for a set of days [7, 15, 30, 45, ...]
+  - Intersections, how many days inactive are required for each location and storage type to be cost effective relative to Terra
+  - Storage costs, monthly and daily cost to storage the provided workspace's data in each location and storage type 
+  - Network costs, network costs incurred by moving this workspace's data across locations in Google Cloud
+  - Retrieval costs, retrieval costs incurred by accessing this data per storage type
+  - Class A operation gsutil cp, costs for running gsutil cp for all files (or all files without logs) within this bucket
+  - Fees, a summary of fees incurred for moving this bucket out of Terra and back into Terra
+  - monthly storage costs, monthly storage costs for just data storage of this workspace bucket by location and storage type
+  - daily storage costs, daily storage costs for just data storage of this workspace bucket by location and storage type
+  - daily storage costs adjusted for minimum duration, daily storage costs for just data storage of this workspace bucket by location and storage type adjusted for minimum duration required for storage types
+  - daily storage costs adjusted for minimum duration and fees, daily storage costs for just data storage of this workspace bucket by location and storage type adjusted for minimum duration required for storage types and fees incurred for moving data from and return to Terra
+
+Example:
+```bash
+python estimate_archive_and_retrieval_costs.py --namespace vanallen-firecloud-nih --name Robinson2015_dev-MOVED
+```
 
 [Back to table of contents](#table-of-contents)
 

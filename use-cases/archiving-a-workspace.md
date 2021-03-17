@@ -2,7 +2,7 @@
 1. [Archiving overview](#archiving-overview)
    - [Van Allen lab non-Terra buckets for Terra workspaces](#van-allen-lab-non-terra-buckets-for-terra-workspaces)
    - [Understanding cloud costs](#understanding-cloud-costs)
-2. [Estimating archive and retrieval costs](#estimate-archive-and-retrieval-costs)
+2. [Estimating archive and retrieval costs](#estimating-archive-and-retrieval-costs)
 3. [Archiving a workspace](#archiving-a-workspace)
    - [Copying bucket contents](#copying-bucket-contents)
    - [Listing successfully copied files](#listing-successfully-copied-files)
@@ -64,8 +64,12 @@ However, there are sometimes cost incurred for moving data within the cloud. Whe
 
 For more details, [see this slide deck](https://docs.google.com/presentation/d/1y_KxBDum8xNs89llKkdn6bgieBjgSuI3qP7P-Xdeo9A/edit) on estimating cloud archive and retrieval costs.
 
+[Back to table of contents](#table-of-contents)
+
 ## Estimating archive and retrieval costs
 The python script `estimate_archive_and_retrieval_costs.py` can be used to estimate the most cost effective storage location and type for a given workspace, as a function of how many days it will not be accessed. See the script's [documentation](#documentation) and [this slide deck](https://docs.google.com/presentation/d/1y_KxBDum8xNs89llKkdn6bgieBjgSuI3qP7P-Xdeo9A/edit) for more details. 
+
+[Back to table of contents](#table-of-contents)
 
 ## Archiving a workspace
 The scripts `copy_bucket.sh`, `list_source_files.py`, and `remove_files.sh` should be used to move a workspace's bucket from Terra. Consider the example of archiving the data from the workspace `vanallen-firecloud-nih/2014-Perry-MOAlmanac` (google bucket: `gs://fc-9f163956-5368-4095-a4f1-4ae8d03070b6`) to `gs://terra-workspace-archive-us-central1`.
@@ -114,6 +118,8 @@ gsutil -m cp fc-9f163956-5368-4095-a4f1-4ae8d03070b6-to-terra-workspace-archive-
 - Update the workspace README with the date and where the workspace was archived to. For example, 
 > Archived to `gs://terra-workspace-archive-us-central1/` under `vanallen-gcp-nih` on March 3rd, 2021.
 
+[Back to table of contents](#table-of-contents)
+
 ## Restoring a workspace
 The scripts `copy_bucket.sh`, `list_source_files.py`, and `remove_files.sh` should be used to move a workspace's bucket from Terra. Consider the example of restoring the bucket for workspace `vanallen-firecloud-nih/2014-Perry-MOAlmanac` (google bucket: `gs://fc-9f163956-5368-4095-a4f1-4ae8d03070b6`) from `gs://terra-workspace-archive-us-central1`. If a workspace is restored [before the minimum storage duration of the archive location's storage type is reached](https://cloud.google.com/storage/pricing#archival-pricing), we will be charged for the costs that would have been incurred had this data been stored for the remaining of the minimum storage duration. From Google's documentation, 
 > For example, suppose you store 1,000 GB of Coldline Storage data in the US multi-region. If you add the data on day 1 and then remove it on day 60, you are charged $14 ($0.007/GB/mo. * 1,000 GB * 2 mo.) for storage from day 1 to 60, and then $7 ($0.007/GB/mo. * 1,000 GB * 1 mo.) for 30 days of early deletion from day 61 to 90.
@@ -152,44 +158,9 @@ bash remove_files.sh terra-workspace-archive-us-central1.fc-9f163956-5368-4095-a
 - Update your workspace's [tags](https://docs.google.com/document/d/1J1-ZhcGII8TTOO3uTCzOZw2DUwGghXEm2inLM2cchR8/edit#heading=h.1rwd53ai6e47). Remove the `archived` tag.
 - Remove the details of archiving from the workspace's README. 
 
+[Back to table of contents](#table-of-contents)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-The script `restore_bucket.sh` can be used to restore your workspace's bucket, or really any Google bucket, to the original location. This script assumes that `copy_bucket.sh` was used. The gsutil copy log will be produced and named as `{SOURCE}-from-{DESTINATION}.gsutil_copy_log.csv`. Archived versions of data should be removed using `list_source_files.py` and `remove_files.sh`, if desired. 
-
-Required arguments:
-```bash
-    SOURCE                  <string>    Source Google bucket, with or without the gs:// prefix
-    WORKSPACE_BUCKET        <string>    Google bucket of the Terra workspace, with or without the gs:// prefix
-```
-
-## Example
-`vanallen-firecloud-dfci/MEGA_MEL2` (`gs://fc-d9e5d8f2-df1f-42c7-b51c-3ef20b46425c`) was archived from the multi-regional, Terra storage to regional, archive storage `terra-workspace-archive-us-central1/fc-d9e5d8f2-df1f-42c7-b51c-3ef20b46425c/` by using the `copy_bucket.sh`. This workspace contained 100,606 files that totaled to 17.4 TB of data. To move the files back, `restore_bucket.sh` is used.
-```bash
-bash restore_bucket.sh terra-workspace-archive-us-central1 fc-d9e5d8f2-df1f-42c7-b51c-3ef20b46425c
-```
-
-The gsutil cp log is written to `fc-d9e5d8f2-df1f-42c7-b51c-3ef20b46425c-from-terra-workspace-archive-us-central1.gsutil_copy_log.csv`. To delete the archived version of the data based on the copy, use `list_source_files.py` and `remove_files.sh` as done explained in [moving a bucket](moving-a-bucket.md).
-
-Please keep in mind that there are [network and operational costs](https://cloud.google.com/storage/pricing#network-pricing) associated with moving data, especially across regions. There are also [retrieval and early deletion costs](https://cloud.google.com/storage/pricing#archival-pricing) associated with accessing data.
-
-# Archiving many workspaces
+## Archiving many workspaces
 The script `copy_multiple_buckets.sh` can be used to copy multiple buckets to a specific destination. The script calls copy_bucket.sh, list_sources.py, and remove_files.sh. The input is a tab delimited file that lists the source bucket, destination bucket, workspace namespace, and workspace name. This file can be created with the `list_workspaces_to_archive.py` script, which formats an input for this script based on workspaces with a common tag. Logs are copied to the source bucket; however, the source workspace should be commented and tagged with "archive".
 
 Required arguments:
@@ -212,3 +183,5 @@ The following example is for copying all workspaces tagged as `archive` to the G
 python list_workspaces_to_archive.py --tag archive --destination terra-workspace-archive-us-central1 --output buckets_to_move.txt
 bash copy_multiple_buckets.sh buckets_to_move.txt
 ```
+
+[Back to table of contents](#table-of-contents)

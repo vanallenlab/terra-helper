@@ -69,7 +69,7 @@ For more details, [see this slide deck](https://docs.google.com/presentation/d/1
 [Back to table of contents](#table-of-contents)
 
 ## Estimating archive and retrieval costs
-The python script `estimate_archive_and_retrieval_costs.py` can be used to estimate the most cost effective storage location and type for a given workspace, as a function of how many days it will not be accessed. See the script's [documentation](../documentation.md) and [this slide deck](https://docs.google.com/presentation/d/1y_KxBDum8xNs89llKkdn6bgieBjgSuI3qP7P-Xdeo9A/edit) for more details. 
+The python script `estimate_archive_and_retrieval_costs.py` can be used to estimate the most cost effective storage location and type for a given workspace, as a function of how many days it will not be accessed. See the script's [documentation](../documentation.md#estimate_archive_and_retrieval_costspy) and [this slide deck](https://docs.google.com/presentation/d/1y_KxBDum8xNs89llKkdn6bgieBjgSuI3qP7P-Xdeo9A/edit) for more details. 
 
 [Back to table of contents](#table-of-contents)
 

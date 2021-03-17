@@ -6,6 +6,6 @@
 
 INPUT=$1
 OUTPUT=$2
-N=1000
+N=${3:-1000}
 
 cat "$INPUT" | xargs -L "$N" gsutil du -s | sed 's/ //g' | sed 's/gs:/,gs:/g' >> "$OUTPUT"

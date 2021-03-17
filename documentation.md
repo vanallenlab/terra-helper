@@ -1,5 +1,4 @@
-# Documentation for Terra helper
-## Table of Contents
+# Table of Contents
 - [copy_bucket.sh](#copy_bucketsh)
 - [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
 - [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
@@ -196,14 +195,14 @@ python index_workspace.py --namespace vanallen-firecloud-dfci --name Robinson201
 Required arguments:
 ```bash
     --input, -i             <string>    Log from gsutil cp
-    --output, -o            <string>    Name of output file
+    --output, -o            <string>    Prefix name of output file
 ```
 
 Outputs produced:
 
 |File name|Description|
 |---|---|
-|{output}|List of files which were successfully copied to the destination, one per row.|
+|{output}.files_to_remove.txt|List of files which were successfully copied to the destination, one per row.|
 
 Example:
 ```bash

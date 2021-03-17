@@ -24,7 +24,7 @@ This package can be download through Github on the website or by using terminal.
 
 ```bash
 git clone https://github.com/vanallenlab/terra-helper.git
-cd firecloud-helper
+cd terra-helper
 ```
 
 ### Install Python dependencies
@@ -44,7 +44,9 @@ source activate terra-helper/bin/activate
 pip install -r requirements.txt
 ```
 
-## Use cases
+## Documentation and use cases
+Read about each script found in this repository in the [documentation](documentation.md) file. 
+
 A few different use cases are documented in the `use-cases/` folder:
 - [archiving a workspace](use-cases/archiving-a-workspace.md)
 - [cleaning up a workspace, deleting intermediate files](use-cases/cleaning-up-a-workspace.md)

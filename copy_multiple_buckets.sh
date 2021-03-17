@@ -26,6 +26,7 @@ while read -r source_bucket destination_bucket workspace_namespace workspace_nam
   python list_source_files.py --input "$log" --output "$workspace_namespace.$workspace_name"
   bash remove_files.sh "$files_to_remove"
   gsutil -m cp "$log" "$files_to_remove" gs://"$source"
+  gsutil -m cp "$log" "$files_to_remove" gs://"$destination"
 
   if gsutil ls gs://"$source"/"$log" | grep -q "$log"; then rm "$log"; fi
   if gsutil ls gs://"$source"/"$files_to_remove" | grep -q "$log"; then rm "$files_to_remove"; fi

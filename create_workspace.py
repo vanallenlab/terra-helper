@@ -38,8 +38,7 @@ def create_workspace(namespace, name, location, authorization_domain):
 
 
 if __name__ == "__main__":
-    arg_parser = argparse.ArgumentParser(prog='Create workspace',
-                                         description="Create a workspace on Terra")
+    arg_parser = argparse.ArgumentParser(prog='Create workspace', description="Create a single region workspace")
     arg_parser.add_argument('--namespace', required=True, help='Workspace namespace')
     arg_parser.add_argument('--name', required=True, help='Workspace name')
     arg_parser.add_argument('--location', '-l',

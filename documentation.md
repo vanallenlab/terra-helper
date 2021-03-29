@@ -2,6 +2,7 @@
 - [copy_bucket.sh](#copy_bucketsh)
 - [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
 - [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
+- [create_workspace.py](#create_workspacepy)
 - [downloader.py](#downloaderpy)
 - [estimate_archive_and_retrieval_costs.py](#estimate_archive_and_retrieval_costspy)
 - [get_file_sizes.sh](#get_file_sizessh)
@@ -84,6 +85,30 @@ Example
 bash copy_multiple_buckets.sh buckets_to_move.txt
 ```
 where `buckets_to_move` may be produced by `list_workspaces_to_archive.py`.
+
+[Back to table of contents](#table-of-contents)
+
+## create_workspace.py
+`create_workspace.py` is used to create **single region** workspaces on Terra. As of this writing, single region buckets cannot be created within Terra and all buckets are by default US. In addition, the API endpoint currently does not support setting the bucket location to a multi region location, such as US. Terra uses US-CENTRAL1 virtual machines so our lab will use US-CENTRAL1 buckets. Running a workflow on a VM not in US-CENTRAL1 with your bucket in another region will incur **significant** charges on the lab's behalf. **Please do not change the region unless you have talked to Jihye and Brendan and know what you are doing**.
+
+### Usage
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
+```
+
+Optional arguments:
+```bash
+    --location              <string>    Workspace bucket location on Google Cloud. Choices: [US-CENTRAL1]
+    --authorization         <string>    Authorization domain name associated with the workspace (e.g. TCGA-dbGaP-Authorized, vanallenlab). Default: None
+```
+
+Example:
+We create a workspace in the vanallen-firecloud-nih namespace called test-workspace under the TCGA authorization domain. Generally, we recommend **not** using an authorization domain. 
+```bash
+python create_workspace.py --namespace vanallen-firecloud-nih --name test-workspace --authorization TCGA-dbGaP-Authorized
+```
 
 [Back to table of contents](#table-of-contents)
 

@@ -2,6 +2,7 @@
 - [copy_bucket.sh](#copy_bucketsh)
 - [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
 - [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
+- [downloader.py](#downloaderpy)
 - [estimate_archive_and_retrieval_costs.py](#estimate_archive_and_retrieval_costspy)
 - [get_file_sizes.sh](#get_file_sizessh)
 - [index_workspace.py](#index_workspacepy)
@@ -83,6 +84,26 @@ Example
 bash copy_multiple_buckets.sh buckets_to_move.txt
 ```
 where `buckets_to_move` may be produced by `list_workspaces_to_archive.py`.
+
+[Back to table of contents](#table-of-contents)
+
+## downloader.py
+`downloader.py` will download items in a data model column, written to a folder named the same as the specified column.
+
+### Usage
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
+    --entity_type           <string>    Entity type, or table, in the datamodel
+    --column                <string>    Column name for download
+```
+
+Example:
+In this example, we download the column oncotated_maf from the workspace my-test-namespace/my-test-workspace from the pair table.
+```bash
+python downloader.py --namespace my-test-namespace --workspace --my-test-workspace --entity_type pair --column oncotated_maf
+```
 
 [Back to table of contents](#table-of-contents)
 

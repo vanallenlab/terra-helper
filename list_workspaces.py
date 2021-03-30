@@ -136,12 +136,11 @@ def pivot_tags(tags_by_workspace):
         .fillna(0)
         .reset_index()
     )
-    pivoted['no tags'] = pivoted.loc[:, LAB_TAGS].astype(int).sum(axis=1).eq(0).astype(int)
     return (
         tags_by_workspace
         .loc[:, ['namespace', 'workspace', 'workspace-id']]
         .drop_duplicates()
-        .merge(pivoted, on='workspace-id')
+        .merge(pivoted, on='workspace-id', how='left')
         .drop('workspace-id', axis=1)
     )
 
@@ -177,7 +176,9 @@ def list_workspaces(output_filename=None, list_tags=False):
     if list_tags:
         workspace_tags = list_workspace_tags(workspaces)
         dataframe_tags = pivot_tags(workspace_tags)
-        dataframe = dataframe.merge(dataframe_tags, on=['namespace', 'workspace'])
+        dataframe = dataframe.merge(dataframe_tags, on=['namespace', 'workspace'], how='left')
+        dataframe.loc[:, LAB_TAGS] = dataframe.loc[:, LAB_TAGS].fillna(0)
+        dataframe['no tags'] = dataframe.loc[:, LAB_TAGS].astype(int).sum(axis=1).eq(0).astype(int)
 
     write_dataframe(dataframe, output_filename)
 

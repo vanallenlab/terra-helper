@@ -5,6 +5,22 @@ from datetime import date
 from google.cloud import storage
 from oauth2client.client import GoogleCredentials
 
+LAB_TAGS = [
+    'archive',
+    'Archive',
+    'cleaner-bot-opt-in',
+    'cleaner-bot-opt-out',
+    'datamodel',
+    'storage',
+    'vanallen-methods',
+    'vanallen-reference',
+    'vanallen-cohort',
+    'archived',
+    'cleaner-bot-storage',
+    'cleaner-bot-history',
+    'migrated-to-nih'
+]
+
 NAMESPACES = [
     'nci-breardon-bi-org',
     'nci-mxhe-bi-org',
@@ -15,9 +31,11 @@ NAMESPACES = [
     'vanallen-firecloud-nih',
     'vanallen-nih-ped'
 ]
+
 OUTPUT_COLUMNS_BASE = ['namespace', 'workspace', 'bucket', 'location_type', 'location',
                        'storage_bytes', 'storage_binary_gigabytes', 'storage_binary_terabytes', 'cost_per_month',
                        'last_modified', 'created_by']
+
 ROOT = 'https://api.firecloud.org/api'
 
 
@@ -54,8 +72,8 @@ def create_workspace_series(workspace_dictionary, headers, storage_client):
     response = get_bucket_usage(namespace, name, headers)
     if response.status_code in [200]:
         storage_bytes = response.json()['usageInBytes']
-        storage_binary_gigabytes = convert_bytes(storage_bytes, 2**30)
-        storage_binary_terabytes = convert_bytes(storage_bytes, 2**40)
+        storage_binary_gigabytes = convert_bytes(storage_bytes, 2 ** 30)
+        storage_binary_terabytes = convert_bytes(storage_bytes, 2 ** 40)
 
         series.loc['storage_bytes'] = storage_bytes
         series.loc['storage_binary_gigabytes'] = storage_binary_gigabytes
@@ -91,11 +109,52 @@ def get_workspaces(headers):
     return requests.get(request, headers=headers)
 
 
+def list_workspace_tags(workspaces):
+    tagged_workspaces = [workspace for workspace in workspaces if "tag:tags" in workspace['workspace']['attributes']]
+    workspace_tags = []
+    count = 0
+
+    for workspace in tagged_workspaces:
+        tmp_tags = return_tags(workspace)
+        for tag in tmp_tags:
+            workspace_tags.append({
+                'namespace': workspace['workspace']['namespace'],
+                'workspace': workspace['workspace']['name'],
+                'tag': tag,
+                'workspace-id': count
+            })
+        count += 1
+    return pd.DataFrame(workspace_tags)
+
+
+def pivot_tags(tags_by_workspace):
+    tags_by_workspace['value'] = 1
+    pivoted = (
+        tags_by_workspace
+        .pivot(index='workspace-id', columns='tag', values='value')
+        .reindex(LAB_TAGS, axis='columns')
+        .fillna(0)
+        .reset_index()
+    )
+    pivoted['no tags'] = pivoted.loc[:, LAB_TAGS].astype(int).sum(axis=1).eq(0).astype(int)
+    return (
+        tags_by_workspace
+        .loc[:, ['namespace', 'workspace', 'workspace-id']]
+        .drop_duplicates()
+        .merge(pivoted, on='workspace-id')
+        .drop('workspace-id', axis=1)
+    )
+
+
+def return_tags(workspace_dictionary):
+    return sorted(workspace_dictionary['workspace']['attributes']['tag:tags']['items'])
+
+
 def write_dataframe(dataframe, handle):
     dataframe.to_csv(handle, sep='\t', index=False)
 
 
-def list_workspaces(output_filename=None):
+def list_workspaces(output_filename=None, list_tags=False):
     if not output_filename:
         output_filename = create_default_output_filename()
     headers = generate_header()
@@ -114,13 +173,19 @@ def list_workspaces(output_filename=None):
         workspaces_list.append(workspace_series)
 
     dataframe = pd.concat(workspaces_list, axis=1).T.sort_values('cost_per_month', ascending=False)
+
+    if list_tags:
+        workspace_tags = list_workspace_tags(workspaces)
+        dataframe_tags = pivot_tags(workspace_tags)
+        dataframe = dataframe.merge(dataframe_tags, on=['namespace', 'workspace'])
+
     write_dataframe(dataframe, output_filename)
 
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(prog='Create workspace', description="Create a single region workspace")
     arg_parser.add_argument('--output', '-o', default=None, help='Output file name')
-    arg_parser.add_argument('--tags', '-t', default=None, help='List workspace tags')
+    arg_parser.add_argument('--tags', '-t', action='store_true', help='List workspace tags')
     args = arg_parser.parse_args()
 
-    list_workspaces(args.output)
+    list_workspaces(args.output, args.tags)

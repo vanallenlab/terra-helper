@@ -45,7 +45,6 @@ if __name__ == "__main__":
                             choices=['US-CENTRAL1'], default='US-CENTRAL1', help='Location on google cloud')
     # API endpoint currently does not support multi region locations; choices= = ['US', 'US-CENTRAL1']
     arg_parser.add_argument('--authorization', '-ad', default=None, help='Authorization domain')
-
     args = arg_parser.parse_args()
 
     status_code, response = create_workspace(args.namespace, args.name, args.location, args.authorization)

@@ -257,6 +257,30 @@ python list_source_files.py --input fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-to-t
 
 [Back to table of contents](#table-of-contents)
 
+## list_workspaces.py
+`list_workspaces.py` list all workspaces found within the specified namespaces along with bucket usage, monthly cost, and last modified date. Additional columns can be generated to list the tags used by each workspace.
+
+### Usage
+Optional arguments:
+```bash
+    --output                <string>    Output name for produced file. Default: YYYY-MM-DD.workspaces_storage.txt
+    --tags                  <string>    If passed, tags will be annotated
+```
+
+Outputs produced:
+
+|File name|Description|
+|---|---|
+|YYYY-MM-DD.workspaces_storage.txt|List of workspaces with metadata, one per row.|
+
+Example:
+In this example, we list all workspaces with tags. `--output` is not passed to keep the default naming convention.
+```bash
+python list_workspaces.py --tags
+```
+
+[Back to table of contents](#table-of-contents)
+
 ## list_workspaces_to_archive.py
 `list_workspaces_to_archive.py` can generate an input for `copy_multiple_buckets.sh` based on a common tag in Terra. The same destination is set for all workspaces listed.
 

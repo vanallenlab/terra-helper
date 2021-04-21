@@ -20,7 +20,7 @@ export GCS_OAUTH_TOKEN=`gcloud auth application-default print-access-token`
 ```
 
 ### Download this software from Github
-This package can be download through Github on the website or by using terminal. To download on the website, navigate to the top of this page, click the green `Clone or download` button, and select `Download ZIP`. This will download this repository in a compressed format. To install using Github on terminal, type 
+This package can be downloaded through Github on the website or by using terminal. To download on the website, navigate to the top of this page, click the green `Clone or download` button, and select `Download ZIP`. This will download this repository in a compressed format. To install using Github on terminal, type 
 
 ```bash
 git clone https://github.com/vanallenlab/terra-helper.git

@@ -244,11 +244,23 @@ Required arguments:
     --output, -o            <string>    Prefix name of output file
 ```
 
+Optional arguments:
+```bash
+    --files, -f             <boolean>   List the number of files attempted and successfully transferred
+    --bytes, -b             <boolean>   List the bytes and gigibytes attempted and successfully transferred
+```
+
 Outputs produced:
 
 |File name|Description|
 |---|---|
 |{output}.files_to_remove.txt|List of files which were successfully copied to the destination, one per row.|
+|n_files_attempted.txt|The number of files attempted to be copied.|
+|n_files_transferred.txt|The number of files successfully transferred.|
+|bytes_attempted.txt|Bytes at source location for files attempted to be copied.|
+|bytes_transferred.txt|Bytes transferred for successfully copied files.|
+|gigibytes_attempted.txt|Gigibytes (bytes / 2^30) at source location for files attempted to be copied.|
+|gigibytes_transferred.txt|Gigibytes (bytes / 2^30) transferred for successfully copied files.|
 
 Example:
 ```bash

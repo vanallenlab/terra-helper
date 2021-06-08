@@ -39,12 +39,12 @@ task remove_files {
     }
 
     command {
-        python list_source_files.py --input ~{gsutil_copy_log} --output ~{source_bucket}
+        python /list_source_files.py --input ~{gsutil_copy_log} --output ~{source_bucket}
 
-        bash remove_files "~{source_bucket}.files_to-remove.txt"
+        bash /remove_files.sh "~{source_bucket}.files_to_remove.txt"
 
-        gsutil cp "~{source_bucket}.files_to_remove.txt" gs://~{source_bucket}
-        gsutil cp "~{source_bucket}.files_to_remove.txt" gs://~{destination_bucket}
+        gsutil cp "~{source_bucket}.files_to_remove.txt" "gs://~{source_bucket}"
+        gsutil cp "~{source_bucket}.files_to_remove.txt" "gs://~{destination_bucket}"
     }
 
     output {

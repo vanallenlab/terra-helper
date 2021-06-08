@@ -14,6 +14,10 @@ workflow copy_bucket_workflow {
         String destination_name
         String destination_bucket
         String namespace_to_charge
+        Int boot_disk
+        Int disk
+        Int memory
+        File monitoring_script
 
         String source = sub(source_bucket, "gs://", "")
         String destination = sub(destination_bucket, "gs://", "")
@@ -23,7 +27,11 @@ workflow copy_bucket_workflow {
         input:
             namespace = namespace_to_charge,
             source = source,
-            destination = destination
+            destination = destination,
+            boot_disk = boot_disk,
+            disk = disk,
+            memory = memory,
+            monitoring_script = monitoring_script
     }
 
     output {
@@ -37,9 +45,16 @@ task copy_bucket {
         String source
         String destination
         String log_name = "~{source}-to-~{destination}.gsutil_copy_log.csv"
+        Int boot_disk
+        Int disk
+        Int memory
+        File monitoring_script
     }
 
     command {
+        chmod u+x ~{monitoring_script}
+        ~{monitoring_script} > monitoring.log &
+
         gsutil -u ~{namespace} -m cp -L ~{log_name} -r gs://~{source} gs://~{destination}
 
         gsutil cp ~{log_name} gs://~{source}
@@ -48,11 +63,13 @@ task copy_bucket {
 
     output {
         File gsutil_copy_log = "~{log_name}"
+        File monitoringLog = "monitoring.log"
     }
 
     runtime {
         docker: "vanallenlab/terra-helper:1.0.0"
-        memory: "2 GB"
-        disks: "local-disk 50 HDD"
+        memory: "~{memory} GB"
+        disks: "local-disk ~{disk} HDD"
+        bootDiskSizeGb: "~{boot_disk}"
     }
 }

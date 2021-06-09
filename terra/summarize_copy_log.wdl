@@ -7,11 +7,15 @@ workflow summarize_copy_log {
 
     input {
         File gsutil_copy_log
+        Int memoryGB
+        Int diskGB
     }
 
     call generate_summary {
         input:
-            gsutil_copy_log = gsutil_copy_log
+            gsutil_copy_log = gsutil_copy_log,
+            memoryGB = memoryGB,
+            diskGB = diskGB
     }
 
     output {
@@ -28,6 +32,8 @@ workflow summarize_copy_log {
 task generate_summary {
     input {
         File gsutil_copy_log
+        Int memoryGB
+        Int diskGB
     }
 
     command {
@@ -45,7 +51,7 @@ task generate_summary {
 
     runtime {
         docker: "vanallenlab/terra-helper:1.0.0"
-        memory: "2 GB"
-        disks: "local-disk 50 HDD"
+        memory: "~{memoryGB} GB"
+        disks: "local-disk ~{diskGB} HDD"
     }
 }

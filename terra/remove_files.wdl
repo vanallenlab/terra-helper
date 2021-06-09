@@ -14,6 +14,7 @@ workflow remove_files_workflow {
         String destination_name
         String destination_bucket
         File gsutil_copy_log
+        Int memoryGB
 
         String source = sub(source_bucket, "gs://", "")
         String destination = sub(destination_bucket, "gs://", "")
@@ -23,7 +24,8 @@ workflow remove_files_workflow {
         input:
             gsutil_copy_log = gsutil_copy_log,
             source_bucket = source,
-            destination_bucket = destination
+            destination_bucket = destination,
+            memoryGB = memoryGB
     }
 
     output {
@@ -36,6 +38,7 @@ task remove_files {
         File gsutil_copy_log
         String source_bucket
         String destination_bucket
+        Int memoryGB
     }
 
     command {
@@ -53,7 +56,7 @@ task remove_files {
 
     runtime {
         docker: "vanallenlab/terra-helper:1.0.0"
-        memory: "2 GB"
+        memory: "~{memoryGB} GB"
         disks: "local-disk 50 HDD"
     }
 }

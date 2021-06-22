@@ -18,7 +18,9 @@ LAB_TAGS = [
     'archived',
     'cleaner-bot-storage',
     'cleaner-bot-history',
-    'migrated-to-nih'
+    'migrated-to-nih',
+    'migrated-to-regional-storage',
+    'not-migrating-to-regional-storage'
 ]
 
 NAMESPACES = [

@@ -3,7 +3,7 @@ import pandas as pd
 
 
 def read_handle(handle, delimiter):
-    return pd.read_csv(handle, sep=delimiter)
+    return pd.read_csv(handle, sep=delimiter, low_memory=False)
 
 
 def subset_copy_log(df):
@@ -21,6 +21,7 @@ if __name__ == "__main__":
 
     log = read_handle(args.input, ',')
     output = f'{args.output}.files_to_remove.txt'
+    print(log.head())
     subset = subset_copy_log(log)
 
     print(f'{subset.shape[0]} files successfully copied of {log.shape[0]} attempted.')

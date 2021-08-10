@@ -1,16 +1,33 @@
 # Table of Contents
-- [copy_bucket.sh](#copy_bucketsh)
-- [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
-- [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
-- [create_workspace.py](#create_workspacepy)
-- [downloader.py](#downloaderpy)
-- [estimate_archive_and_retrieval_costs.py](#estimate_archive_and_retrieval_costspy)
-- [get_file_sizes.sh](#get_file_sizessh)
-- [index_workspace.py](#index_workspacepy)
-- [list_source_files.py](#list_source_filespy)
-- [list_workspaces_to_archive.py](#list_workspaces_to_archivepy)
-- [remove_files.sh](#remove_filessh)
-- [restore_bucket.sh](#restore_bucketsh)
+- [Table of Contents](#table-of-contents)
+  - [copy_bucket.sh](#copy_bucketsh)
+    - [Usage](#usage)
+  - [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
+    - [Usage](#usage-1)
+  - [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
+    - [Usage](#usage-2)
+  - [create_workspace.py](#create_workspacepy)
+    - [Usage](#usage-3)
+  - [downloader.py](#downloaderpy)
+    - [Usage](#usage-4)
+  - [estimate_archive_and_retrieval_costs.py](#estimate_archive_and_retrieval_costspy)
+    - [Usage](#usage-5)
+  - [get_file_sizes.sh](#get_file_sizessh)
+    - [Usage](#usage-6)
+  - [index_workspace.py](#index_workspacepy)
+    - [Usage](#usage-7)
+  - [list_source_files.py](#list_source_filespy)
+    - [Usage](#usage-8)
+  - [list_workspaces.py](#list_workspacespy)
+    - [Usage](#usage-9)
+  - [list_workspaces_to_archive.py](#list_workspaces_to_archivepy)
+    - [Usage](#usage-10)
+  - [remove_files.sh](#remove_filessh)
+    - [Usage](#usage-11)
+  - [restore_bucket.sh](#restore_bucketsh)
+    - [Usage](#usage-12)
+  - [notify_when_job_done.py](#notify_when_job_donepy)
+    - [Usage](#usage-13)
 
 ## copy_bucket.sh
 `copy_bucket.sh` will copy the contents of one bucket to another. Contents of the source bucket will be placed in folder named after the source bucket within the destination bucket, with folder structure mirrored. Specifically, the following will result in passing `fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af` as a source bucket and `terra-workspace-archive-us-central1` as the destination bucket:
@@ -359,5 +376,32 @@ Example:
 ```bash
 bash restore_bucket.sh terra-workspace-archive-us-central1 fc-d9e5d8f2-df1f-42c7-b51c-3ef20b46425c
 ```
+
+[Back to table of contents](#table-of-contents)
+
+## notify_when_job_done.py
+
+`notify_when_job_done.py` is used to keep track of a job submission and have it send an email notification when it's finished. It works by running in the background and ask Terra about the job status every 5 minutes (by default) and sends an email to yourself when the status is no longer "Running" or "Submitted". To use it leave the terminal open after it is called and make sure you have a gmail that allows for non-secure app access (two-factor authentication disabled). (Check [this link](https://stackoverflow.com/questions/16512592/login-credentials-not-working-with-gmail-smtp) to see why and what settings you have to change).
+
+### Usage
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
+    --email                 <string>    Your email
+    --submission_id         <string>    The id of the job submission
+```
+In addition to the required arguments the user will be prompted to enter the password for their email. Make sure the password is entered correctly or the email won't be sent when the job is finished.
+
+Optional arguments:
+```bash
+    --wait_interval         <int>    Number of seconds to wait before sending another job status request (default: 300)
+```
+
+Example
+```bash
+python notify_when_job_done.py --namespace edu-cred-g --name Qatar-WGS --email hoyinchu.terra@gmail.org --submission_id 85f989ca-c1f1-4ff0-b380-35a05786ed79 --wait_interval 60
+```
+
 
 [Back to table of contents](#table-of-contents)

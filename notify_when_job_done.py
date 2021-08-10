@@ -39,8 +39,8 @@ def set_up_email_client(email,namespace,name,submission_id,wait_interval=300):
     while status_code == 200 and (submission_status == 'Running' or submission_status == 'Submitted'):
         time.sleep(wait_interval)
         status_code,status_json = get_submission_status(namespace,name,submission_id)
-        print(status_code)
-        print(status_json)
+        # print(status_code)
+        # print(status_json)
         submission_status = status_json['status']
     
     if status_code == 200:

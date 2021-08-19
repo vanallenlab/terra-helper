@@ -5,10 +5,10 @@ Terra helper is a collection of scripts which leverage the [Terra API](https://a
 
 ### System requirements
 To use terra storage helper, you must have the following set up on your system
-- [Google Cloud SDK](https://cloud.google.com/sdk/)
+- [Google Cloud SDK](https://cloud.google.com/storage/docs/gsutil_install)
 - Python 3
 
-Google Cloud and Terra use [Google Cloud SDK](https://cloud.google.com/sdk/) to manage authentication. The [application default credentials](https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login) will be used. **Please walk through Google's wonderful install and set up documentation if you have not**. To login and set an application default, make sure that you've run the following,
+Google Cloud and Terra use [Google Cloud SDK](https://cloud.google.com/storage/docs/gsutil_install) to manage authentication. The [application default credentials](https://cloud.google.com/sdk/gcloud/reference/auth/application-default/login) will be used. **Please walk through Google's wonderful install and set up documentation if you have not**. To login and set an application default, make sure that you've run the following,
 ```bash
 gcloud auth login
 gcloud auth application-default login

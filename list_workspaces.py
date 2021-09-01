@@ -1,38 +1,10 @@
 import argparse
+import json
 import pandas as pd
 import requests
 from datetime import date
-from google.cloud import storage
+from google.cloud import exceptions, storage
 from oauth2client.client import GoogleCredentials
-
-LAB_TAGS = [
-    'archive',
-    'Archive',
-    'cleaner-bot-opt-in',
-    'cleaner-bot-opt-out',
-    'datamodel',
-    'storage',
-    'vanallen-methods',
-    'vanallen-reference',
-    'vanallen-cohort',
-    'archived',
-    'cleaner-bot-storage',
-    'cleaner-bot-history',
-    'migrated-to-nih',
-    'migrated-to-regional-storage',
-    'not-migrating-to-regional-storage'
-]
-
-NAMESPACES = [
-    'nci-breardon-bi-org',
-    'nci-mxhe-bi-org',
-    'vanallen-firecloud-dfci',
-    'vanallen-germline',
-    'vanallen-liulab',
-    'vanallen-melanoma-wgs',
-    'vanallen-firecloud-nih',
-    'vanallen-nih-ped'
-]
 
 OUTPUT_COLUMNS_BASE = ['namespace', 'workspace', 'bucket', 'location_type', 'location',
                        'storage_bytes', 'storage_binary_gigabytes', 'storage_binary_terabytes', 'cost_per_month',
@@ -65,9 +37,15 @@ def create_workspace_series(workspace_dictionary, headers, storage_client):
     series.loc['workspace'] = name
     series.loc['bucket'] = bucket_name
 
-    bucket = storage_client.get_bucket(bucket_name)
-    bucket_location_type = bucket.location_type
-    bucket_location = bucket.location
+    try:
+        bucket = storage_client.get_bucket(bucket_name)
+        series.loc['location_request_successful'] = 1
+        bucket_location_type = bucket.location_type
+        bucket_location = bucket.location
+    except:
+        series.loc['location_request_successful'] = 0
+        bucket_location_type = 'multi-region'
+        bucket_location = 'US'
     series.loc['location_type'] = bucket_location_type
     series.loc['location'] = bucket_location
 
@@ -89,6 +67,13 @@ def create_workspace_series(workspace_dictionary, headers, storage_client):
     series.loc['last_modified'] = workspace_dictionary['workspace']['lastModified']
     series.loc['created_by'] = workspace_dictionary['workspace']['createdBy']
     return series
+
+
+def drop_location_request_column(df):
+    if 0 not in df['location_request_successful'].tolist():
+        return df.drop('location_request_successful', axis=1)
+    else:
+        return df
 
 
 def generate_header():
@@ -129,12 +114,12 @@ def list_workspace_tags(workspaces):
     return pd.DataFrame(workspace_tags)
 
 
-def pivot_tags(tags_by_workspace):
+def pivot_tags(tags_by_workspace, tags):
     tags_by_workspace['value'] = 1
     pivoted = (
         tags_by_workspace
         .pivot(index='workspace-id', columns='tag', values='value')
-        .reindex(LAB_TAGS, axis='columns')
+        .reindex(tags, axis='columns')
         .fillna(0)
         .reset_index()
     )
@@ -147,6 +132,11 @@ def pivot_tags(tags_by_workspace):
     )
 
 
+def read_json(handle):
+    with open(handle) as json_file:
+        return json.load(json_file)
+
+
 def return_tags(workspace_dictionary):
     return sorted(workspace_dictionary['workspace']['attributes']['tag:tags']['items'])
 
@@ -155,7 +145,7 @@ def write_dataframe(dataframe, handle):
     dataframe.to_csv(handle, sep='\t', index=False)
 
 
-def list_workspaces(output_filename=None, list_tags=False):
+def list_workspaces(namespaces, list_tags=None, output_filename=None):
     if not output_filename:
         output_filename = create_default_output_filename()
     headers = generate_header()
@@ -166,7 +156,7 @@ def list_workspaces(output_filename=None, list_tags=False):
         return response.status_code, response.content
 
     workspaces_all = response.json()
-    workspaces = [workspace for workspace in workspaces_all if workspace['workspace']['namespace'] in NAMESPACES]
+    workspaces = [workspace for workspace in workspaces_all if workspace['workspace']['namespace'] in namespaces]
 
     workspaces_list = []
     for workspace in workspaces:
@@ -177,18 +167,34 @@ def list_workspaces(output_filename=None, list_tags=False):
 
     if list_tags:
         workspace_tags = list_workspace_tags(workspaces)
-        dataframe_tags = pivot_tags(workspace_tags)
-        dataframe = dataframe.merge(dataframe_tags, on=['namespace', 'workspace'], how='left')
-        dataframe.loc[:, LAB_TAGS] = dataframe.loc[:, LAB_TAGS].fillna(0)
-        dataframe['no tags'] = dataframe.loc[:, LAB_TAGS].astype(int).sum(axis=1).eq(0).astype(int)
+        if not workspace_tags.empty:
+            dataframe_tags = pivot_tags(workspace_tags, list_tags)
+            dataframe = dataframe.merge(dataframe_tags, on=['namespace', 'workspace'], how='left')
+            dataframe.loc[:, list_tags] = dataframe.loc[:, list_tags].fillna(0)
+            dataframe['no tags'] = dataframe.loc[:, list_tags].astype(int).sum(axis=1).eq(0).astype(int)
+        else:
+            dataframe['no tags'] = 1
 
+    dataframe = drop_location_request_column(dataframe)
     write_dataframe(dataframe, output_filename)
 
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser(prog='Create workspace', description="Create a single region workspace")
+    arg_parser.add_argument('--config', '-c', default='config.json', help='Config to list default namespaces and tags')
+    arg_parser.add_argument('--namespace', '-ns', default=None, action='append', help='Namespaces to list workspaces')
     arg_parser.add_argument('--output', '-o', default=None, help='Output file name')
     arg_parser.add_argument('--tags', '-t', action='store_true', help='List workspace tags')
     args = arg_parser.parse_args()
 
-    list_workspaces(args.output, args.tags)
+    config = read_json(args.config)
+    if args.namespace is None:
+        list_of_namespaces = config["namespaces"]
+    else:
+        list_of_namespaces = args.namespace
+    if args.tags:
+        list_of_tags = config["tags"]
+    else:
+        list_of_tags = None
+
+    list_workspaces(list_of_namespaces, list_tags=list_of_tags, output_filename=args.output)

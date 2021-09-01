@@ -8,6 +8,7 @@
 - [get_file_sizes.sh](#get_file_sizessh)
 - [index_workspace.py](#index_workspacepy)
 - [list_source_files.py](#list_source_filespy)
+- [list_workspaces.py](#list_workspacespy)
 - [list_workspaces_to_archive.py](#list_workspaces_to_archivepy)
 - [remove_files.sh](#remove_filessh)
 - [restore_bucket.sh](#restore_bucketsh)
@@ -270,13 +271,15 @@ python list_source_files.py --input fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-to-t
 [Back to table of contents](#table-of-contents)
 
 ## list_workspaces.py
-`list_workspaces.py` list all workspaces found within the specified namespaces along with bucket usage, monthly cost, and last modified date. Additional columns can be generated to list the tags used by each workspace.
+`list_workspaces.py` list all workspaces found within the specified namespaces along with bucket usage, monthly cost, and last modified date. Additional columns can be generated to list the tags used by each workspace. Tags looked for and default namespaces to list workspaces from are defined in `config.json`. 
 
 ### Usage
 Optional arguments:
 ```bash
+    --config                <string>    Config file that defines namespaces and tags. Default: `config.json`
+    --namespace             <string>    Namespace to list workspaces from, can be passed multiple times. Default: namespaces listed in `config.json``
     --output                <string>    Output name for produced file. Default: YYYY-MM-DD.workspaces_storage.txt
-    --tags                  <string>    If passed, tags will be annotated
+    --tags                  <boolean>   If passed, tags listed in `config.json` will be annotated
 ```
 
 Outputs produced:
@@ -286,15 +289,23 @@ Outputs produced:
 |YYYY-MM-DD.workspaces_storage.txt|List of workspaces with metadata, one per row.|
 
 Example:
-In this example, we list all workspaces with tags. `--output` is not passed to keep the default naming convention.
+In this example, we list all workspaces from namespaces defined in `config.json` with tags. `--output` is not passed to keep the default naming convention.
 ```bash
 python list_workspaces.py --tags
+```
+Here, we list workspaces with tags from the namespaces `vanallen-firecloud-nih` and `vanallen-firecloud-dfci`,
+```bash
+python list_workspaces --namespace vanallen-firecloud-nih --namespace vanallen-firecloud-dfci --tags
+```
+And here, we list only workspaces from `vanallen-firecloud-nih` without tags and define the output name.
+```bash
+python list_workspaces --namespace vanallen-firecloud-nih --output vanallen-firecloud-nih.workspaces.txt
 ```
 
 [Back to table of contents](#table-of-contents)
 
 ## list_workspaces_to_archive.py
-`list_workspaces_to_archive.py` can generate an input for `copy_multiple_buckets.sh` based on a common tag in Terra. The same destination is set for all workspaces listed.
+`list_workspaces_to_archive.py` can generate an input for `copy_multiple_buckets.sh` based on a common tag in Terra. The same destination is set for all workspaces listed. If you want to run `list_workspaces.py` for multiple accounts, don't forget to update your application default credentials before each run.
 
 ### Usage
 Required arguments:

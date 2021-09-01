@@ -1,0 +1,29 @@
+{
+  "namespaces": [
+    "nci-breardon-bi-org",
+    "vanallen-aldubayan-lab",
+    "vanallen-firecloud-dfci",
+    "vanallen-firecloud-nih",
+    "vanalen-germline",
+    "vanallen-liulab",
+    "vanallen-melanoma-wgs",
+    "vanallen-nih-ped"
+  ],
+  "tags": [
+    "archive",
+    "Archive",
+    "cleaner-bot-opt-in",
+    "cleaner-bot-opt-out",
+    "datamodel",
+    "storage",
+    "vanallen-methods",
+    "vanallen-reference",
+    "vanallen-cohort",
+    "archived",
+    "cleaner-bot-storage",
+    "cleaner-bot-history",
+    "migrated-to-nih",
+    "migrated-to-regional-storage",
+    "not-migrating-to-regional-storage"
+  ]
+}

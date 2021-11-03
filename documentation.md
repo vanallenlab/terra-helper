@@ -243,7 +243,7 @@ Outputs produced:
 
 Example:
 ```bash
-bash get_file_sizes.sh vanallen-firecloud-nih.2014-Perry-MOAlmanac.files_to_remove.txt vanallen-firecloud-nih.2014-Perry-MOAlmanac.files_to_remove.annotated.txt
+bash get_file_sizes.sh vanallen-firecloud-nih.2014-Perry-MOAlmanac.files_to_remove.txt vanallen-firecloud-nih.2014-Perry-MOAlmanac.files_to_remove.annotated.csv
 ```
 
 [Back to table of contents](#table-of-contents)

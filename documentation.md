@@ -4,6 +4,7 @@
 - [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
 - [create_workspace.py](#create_workspacepy)
 - [downloader.py](#downloaderpy)
+- [download_entity_table.py](#download_entity_tablepy)
 - [estimate_archive_and_retrieval_costs.py](#estimate_archive_and_retrieval_costspy)
 - [get_file_sizes.sh](#get_file_sizessh)
 - [index_workspace.py](#index_workspacepy)
@@ -129,6 +130,50 @@ Example:
 In this example, we download the column oncotated_maf from the workspace my-test-namespace/my-test-workspace from the pair table.
 ```bash
 python downloader.py --namespace my-test-namespace --workspace --my-test-workspace --entity_type pair --column oncotated_maf
+```
+
+[Back to table of contents](#table-of-contents)
+
+## download_entity_table.py
+`download_entity_table.py` will download entity table(s) from the data models of specified workspace(s).
+
+### Usage, single table download
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
+    --entity_type           <string>    Entity type, or table, in the datamodel
+```
+
+Example:
+In this example, we download the pair table from the workspace my-test-namespace/my-test-workspace.
+```bash
+python download_entity_table.py --namespace my-test-namespace --workspace --my-test-workspace --entity_type pair
+```
+
+### Usage, multiple table download
+Required arguments:
+```bash
+    --tsv                   <string>    tab delimited file of multiple tables to download
+```
+
+A provided tab delimited file should be structured as follows to download multiple entity tables,
+|namespace|name|entity_type|
+|---|---|---|
+|`workspace_namespace`|`workspace_name`|`entity_type`|
+|`workspace_namespace`|`workspace_name`|`entity_type`|
+
+Example:
+In this example, we download the pair table from the workspace my-test-namespace/my-test-workspace and the sample_set table from the workspace my-test-namespace/my-test-workspace-2
+
+Input file called `tables_to_download.tsv`,
+|namespace|name|entity_type|
+|---|---|---|
+|my-test-namespace|my-test-workspace|pair|
+|my-test-namespace|my-test-workspace-2|sample_set|
+
+```bash
+python download_entity_table.py --tsv tables_to_download.tsv
 ```
 
 [Back to table of contents](#table-of-contents)

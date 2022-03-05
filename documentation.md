@@ -13,6 +13,7 @@
 - [list_workspaces_to_archive.py](#list_workspaces_to_archivepy)
 - [remove_files.sh](#remove_filessh)
 - [restore_bucket.sh](#restore_bucketsh)
+- [restore_files.sh](#restore_filessh)
 
 ## copy_bucket.sh
 `copy_bucket.sh` will copy the contents of one bucket to another. Contents of the source bucket will be placed in folder named after the source bucket within the destination bucket, with folder structure mirrored. Specifically, the following will result in passing `fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af` as a source bucket and `terra-workspace-archive-us-central1` as the destination bucket:
@@ -414,6 +415,34 @@ Outputs produced:
 Example:
 ```bash
 bash restore_bucket.sh terra-workspace-archive-us-central1 fc-d9e5d8f2-df1f-42c7-b51c-3ef20b46425c
+```
+
+[Back to table of contents](#table-of-contents)
+
+## restore_files.sh
+`restore_files.sh` is used to reverse the results of `gsutil cp`. Given a gsutil copy log, it will copy the `Destination` location back to the `Source` location. This script assumes that the gsutil copy log is still a comma delimited, `.csv`, file format. Using the following example, the `Destination` path will be copied to the `Source` locations,
+
+|Source|Destination|
+|---|---|
+|gs://terra-workspace-archive-us-central1/fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af/stuff.md|gs://fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af/stuff.md|
+|gs://terra-workspace-archive-us-central1/fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af/subfolder/other_stuff.md|gs://fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af/subfolder/other_stuff.md|
+
+### Usage
+Required arguments:
+```bash
+    INPUT_COPY_LOG          <string>    gsutil cp log
+    OUTPUT_PREFIX           <string>    prefix for output file, it will have the suffix of `.restored.csv`
+```
+
+Outputs produced:
+
+|File name|Description|
+|---|---|
+|`{OUTPUT_PREFIX}.restored.csv`|A comma delimited file with the status and byte size of all files that gsutil attempted to copy.|
+
+Example:
+```bash
+bash restore_files.sh fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-to-terra-workspace-archive-us-central1.gsutil_copy_log.csv fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-restored
 ```
 
 [Back to table of contents](#table-of-contents)

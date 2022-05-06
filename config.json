@@ -24,6 +24,11 @@
     "cleaner-bot-history",
     "migrated-to-nih",
     "migrated-to-regional-storage",
-    "not-migrating-to-regional-storage"
+    "not-migrating-to-regional-storage",
+    "vanallen-archive",
+    "vanallen-archived",
+    "vanallen-restore",
+    "lifecycle-policy-opt-in",
+    "lifecycle-polcy-opt-out"
   ]
 }

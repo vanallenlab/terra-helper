@@ -4,7 +4,7 @@ import sys
 
 import operations
 import reformat
-from endpoints import gcloud, terra
+from endpoints import terra
 
 
 class Data:
@@ -159,8 +159,8 @@ def main(namespace, name):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(prog='Record data models',
-                                     description='Record all gs:// paths present in data models')
+    parser = argparse.ArgumentParser(prog='Get workspace attributes',
+                                     description='List all data model elements in a workspace')
     parser.add_argument('--namespace', '-ns', type=str, required=True, help='workspace namespace')
     parser.add_argument('--name', '-n', type=str, required=True, help='workspace name')
     args = parser.parse_args()

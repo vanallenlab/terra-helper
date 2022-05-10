@@ -2,7 +2,7 @@ import requests
 import sys
 
 from endpoints.gcloud import Google
-
+import reformat
 
 class Requests:
     @staticmethod
@@ -28,6 +28,12 @@ class Terra(Requests):
         return cls.check_request(response, f'failed to get data tables for {namespace}/{name}')
 
     @classmethod
+    def get_submissions(cls, headers, namespace, name):
+        request = f'{cls.ROOT}/workspaces/{namespace}/{name}/submissions'
+        response = cls.get_request(request, headers)
+        return cls.check_request(response, f'failed to get workspace submissions for {namespace}/{name}')
+
+    @classmethod
     def get_workspace(cls, headers, namespace, name):
         request = f'{cls.ROOT}/workspaces/{namespace}/{name}'
         response = cls.get_request(request, headers)
@@ -44,7 +50,7 @@ class Terra(Requests):
         return requests.get(request, headers=headers)
 
     @classmethod
-    def request(cls, request_function, format_function, **kwargs):
+    def request(cls, request_function, format_function=reformat.Requests.return_json, **kwargs):
         headers = cls.generate_headers()
         response = request_function(headers, **kwargs)
         return format_function(response)

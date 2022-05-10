@@ -10,6 +10,8 @@ Run scripts from this directory. The table of contents contains a hyperlink to a
 - [download_entity_table.py](#download_entity_tablepy)
 - [estimate_archive_and_retrieval_costs.py](#estimate_archive_and_retrieval_costspy)
 - [get_file_sizes.sh](#get_file_sizessh)
+- [get_workspace_attributes.py](#get_workspace_attributespy)
+- [get_workspace_bucket_contents.py](#get_workspace_bucket_contentspy)
 - [index_workspace.py](#index_workspacepy)
 - [list_source_files.py](#list_source_filespy)
 - [list_workspaces.py](#list_workspacespy)
@@ -252,8 +254,8 @@ bash get_file_sizes.sh vanallen-firecloud-nih.2014-Perry-MOAlmanac.files_to_remo
 
 [Back to table of contents](#table-of-contents)
 
-## index_workspace.py
-`index_workspace.py` will retrieve the bucket and all bucket contents associated with passed workspace, pull all elements in the datamodel and workspace annotations, and  take the difference. If `--keep_related_files` is passed, any files in the same directory as either one in the datamodel or workspace annotations will also be kept, such as the associated sterr and stdout from any jobs. The argument `--keep` can be passed any number of times to prevent files of a given suffix to be added to the remove list. By default, files of the suffix `.ipynb` will be excluded.
+## get_workspace_attributes.py
+`get_workspace_attributes.py` will list all attributes listed within a given workspace, which consists of all elements under all entity and workspace tables under  `Data` tab in a workspace. 
 
 ### Usage
 Required arguments:
@@ -262,25 +264,87 @@ Required arguments:
     --name                  <string>    Workspace's name
 ```
 
-Optional arguments:
+Outputs produced:
+
+| File name                                      | Description                                              |
+|------------------------------------------------|----------------------------------------------------------|
+| {namespace}.{name}.attributes.tsv              | All workspace attributes listed in a tab-delimited table |
+
+Example:
 ```bash
-    --keep_related_files    <boolean>   Boolean for keeping all contents for folders in data model
-    --keep, -k              <string>    File suffix to keep, can pass multiple times
+python get_workspace_attributes.py --namespace vanallen-firecloud-nih --name ovarian-9825
+```
+
+[Back to table of contents](#table-of-contents)
+
+## get_workspace_bucket_contents.py
+`get_workspace_bucket_contents.py` will list all files within a workspace's bucket. This python script fetches the bucket name and essentially runs `gsutil ls gs://{bucket_name}/**`.
+
+### Usage
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name
 ```
 
 Outputs produced:
 
-|File name|Description|
-|---|---|
-|{namespace}.{name}.datamodel_not_paths.txt|Elements in the workspace data model or workspace annotations that are not file paths.|
-|{namespace}.{name}.files_keep.txt|Files that are present in, or related to files in, the data model or workspace annotations.|
-|{namespace}.{name}.files_to_remove.txt|Files which are not present in the data model or workspace annotations and were not flagged to be kept.|
-|{namespace}.{name}.files_to_remove.no_logs.txt|Likely the main output used. A subset of files_to_remove.txt, without any associated logs.|
+| File name                              | Description                                |
+|----------------------------------------|--------------------------------------------|
+| {namespace}.{name}.bucket_contents.tsv | All files present in a workspace's bucket. |
 
 Example:
 ```bash
-python index_workspace.py --namespace vanallen-firecloud-dfci --name Robinson2015_dev --keep_related_files --keep bam --keep bai
+python get_workspace_bucket_contents.py --namespace vanallen-firecloud-nih --name ovarian-9825
 ```
+
+[Back to table of contents](#table-of-contents)
+
+## identify_files_manually_clean_workspace.py
+`identify_files_manually_clean_workspace.py` is a script which will identify files that are present in a workspace's google cloud bucket that are _not_ in the workspace's data model, and nominate such files for removal. Additional criteria is considered: 
+- Logs and system files from cromwell are retained
+- File types can be safe listed to ensure that none of them are removed; e.g. bams 
+- Users can specify to only consider files generated from method submissions
+
+This is accomplished by utilizing bucket contents and workspace attributes. Bucket contents can be obtained by running [`get_workspace_bucket_contents.py`](#get_workspace_bucket_contentspy) and workspace attributes can be obtained with [`get_workspace_attributes.py`](get_workspace_attributes.py).
+
+### Usage
+Required arguments:
+```bash
+    --namespace             <string>    Workspace's namespace
+    --name                  <string>    Workspace's name   
+    --attributes            <string>    Workspace attributes table, from `get_workspace_attributes.py`
+    --bucket-contents       <string>    Workspace bucket contents, from `get_workspace_bucket_contents.py`
+```
+
+Optional arguments:
+```bash
+    --chunk-size             <int>      Rows to process per chunk from `--bucket-contents`, default: 10,000
+    --keep                   <string>   File types to keep and not identify for removal. Leading periods will be removed, default: [`ipynb`]
+    --print                  <boolean>  Prints a summary of results
+    --submissions-only       <boolean>  Considers only files generated from workspace submissions 
+```
+
+Outputs produced:
+
+| File name                                        | Description                                                                 |
+|--------------------------------------------------|-----------------------------------------------------------------------------|
+| {namespace}.{name}.bucket_contents.annotated.tsv | All files present in a workspace's bucket, annotated for filtering criteria |
+| {namespace}.{name}.files_to_remove.tsv | Files from `{namespace}.{name}.bucket_contents.annotated.tsv` that have the column `nominate_for_removal` set to `1` | 
+
+Example:
+```bash
+python identify_files_manually_clean-workspace.py \ 
+          --namespace vanallen-firecloud-nih \
+          --name ovarian-9825 \
+          --attributes vanallen-firecloud-nih.ovarian-9825.attributes.tsv \
+          --bucket-contents vanallen-firecloud-nih.ovarian-9825.bucket_contents.tsv \
+          --keep bam --keep bai --keep .md \ 
+          --submissions-only \
+          --print
+```
+
+Here, we identify files to clean for the workspace vanallen-firecloud-nih/ovarian-9825. We ensure that files with the extension bam, bai, and md are retained and only consider files from workspace submissions. Furthermore, we have the script print a summary of findings into the terminal.
 
 [Back to table of contents](#table-of-contents)
 

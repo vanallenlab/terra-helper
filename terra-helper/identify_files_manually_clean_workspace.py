@@ -68,6 +68,10 @@ def extract_submission_ids_request(submission_records):
     return [submission['submissionId'] for submission in submission_records]
 
 
+def format_booleans_as_integers(dataframe):
+    return dataframe.astype(bool).astype(int)
+
+
 def record_annotations(counts_dataframe, dataframe):
     for column_name in counts_dataframe.columns:
         column_counts = dataframe.loc[:, column_name].value_counts().reindex([True, False], fill_value=0)
@@ -84,7 +88,9 @@ def request_workspace(namespace, name):
     return terra.Terra.request(terra.Terra.get_workspace, namespace=namespace, name=name)
 
 
-def main(namespace, name, attributes, bucket_contents, file_types, submissions_only):
+def main(namespace, name, attributes, bucket_contents, file_types=None, submissions_only_boolean=False):
+    if file_types is None:
+        file_types = ['.ipynb']
     bucket_contents = pd.DataFrame(bucket_contents)
     bucket_contents.columns = ['path']
     bucket_contents.set_index('path', inplace=True)
@@ -96,8 +102,8 @@ def main(namespace, name, attributes, bucket_contents, file_types, submissions_o
 
     annotation_columns = ['in_attributes', 'from_submission', 'log', 'file_type_in_keep_list']
     annotations = bucket_contents.loc[:, annotation_columns]
-    bucket_contents['nominated_for_removal'] = annotate_files_to_clean(annotations, submissions_only)
-    return bucket_contents
+    bucket_contents['nominated_for_removal'] = annotate_files_to_clean(annotations, submissions_only_boolean)
+    return format_booleans_as_integers(bucket_contents)
 
 
 if __name__ == "__main__":

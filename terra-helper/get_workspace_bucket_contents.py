@@ -25,7 +25,7 @@ def glob_bucket(bucket):
 
 
 def request_workspace(namespace, name):
-    return terra.Terra.request(terra.Terra.get_workspace, reformat.Requests.return_json, namespace=namespace, name=name)
+    return terra.Terra.request(terra.Terra.get_workspace, namespace=namespace, name=name)
 
 
 def main(namespace, name):

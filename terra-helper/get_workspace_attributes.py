@@ -71,8 +71,7 @@ class Tables(Data):
     def get_attributes(cls, workspace):
         namespace = workspace['workspace']['namespace']
         name = workspace['workspace']['name']
-        data_table_rows = terra.Terra.request(terra.Terra.get_entities_all_with_type, reformat.Requests.return_json,
-                                              namespace=namespace, name=name)
+        data_table_rows = terra.Terra.request(terra.Terra.get_entities_all_with_type, namespace=namespace, name=name)
         if not data_table_rows:
             return pd.DataFrame([], columns=Data.COLUMN_ORDER)
 
@@ -142,7 +141,7 @@ class WorkspaceData(Data):
 
 
 def request_workspace(namespace, name):
-    return terra.Terra.request(terra.Terra.get_workspace, reformat.Requests.return_json, namespace=namespace, name=name)
+    return terra.Terra.request(terra.Terra.get_workspace, namespace=namespace, name=name)
 
 
 def set_data_types(dataframe):

@@ -20,7 +20,7 @@ def get_gsutil_path():
 def glob_bucket(bucket):
     cmd = f"{get_gsutil_path()} ls gs://{bucket}/**"
     bucket_files = subprocess.check_output(cmd, shell=True, stderr=subprocess.PIPE)
-    series = pd.read_csv(io.StringIO(bucket_files.decode('utf-8')), sep='\n', header=None).loc[:, 0]
+    series = pd.read_csv(io.StringIO(bucket_files.decode('utf-8')),  header=None).loc[:, 0]
     return series.tolist()
 
 

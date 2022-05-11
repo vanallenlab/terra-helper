@@ -1,7 +1,7 @@
 # Terra helper
-Run scripts from this directory. The table of contents contains a hyperlink to all scripts contained in this directory.
+Run scripts from this directory. The table of contents contains a hyperlink to all scripts contained in this directory. Additional documentation for use cases can be found in the [docs/ folder](../docs/).
 
-# Table of Contents
+# Table of contents
 - [copy_bucket.sh](#copy_bucketsh)
 - [copy_bucket-mirror.sh](#copy_bucket-mirrorsh)
 - [copy_multiple_buckets.sh](#copy_multiple_bucketssh)
@@ -12,7 +12,7 @@ Run scripts from this directory. The table of contents contains a hyperlink to a
 - [get_file_sizes.sh](#get_file_sizessh)
 - [get_workspace_attributes.py](#get_workspace_attributespy)
 - [get_workspace_bucket_contents.py](#get_workspace_bucket_contentspy)
-- [index_workspace.py](#index_workspacepy)
+- [identify_files_manually_clean_workspace.py](#identify_files_manually_clean_workspacepy)
 - [list_source_files.py](#list_source_filespy)
 - [list_workspaces.py](#list_workspacespy)
 - [list_workspaces_to_archive.py](#list_workspaces_to_archivepy)

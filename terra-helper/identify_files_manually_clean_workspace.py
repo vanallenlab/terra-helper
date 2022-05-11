@@ -74,7 +74,7 @@ def format_booleans_as_integers(dataframe):
 
 def record_annotations(counts_dataframe, dataframe):
     for column_name in counts_dataframe.columns:
-        column_counts = dataframe.loc[:, column_name].value_counts().reindex([True, False], fill_value=0)
+        column_counts = dataframe.loc[:, column_name].astype(bool).value_counts().reindex([True, False], fill_value=0)
         for value in [True, False]:
             counts_dataframe.loc[value, column_name] += column_counts.loc[value]
     return counts_dataframe
@@ -95,10 +95,11 @@ def main(namespace, name, attributes, bucket_contents, file_types=None, submissi
     bucket_contents.columns = ['path']
     bucket_contents.set_index('path', inplace=True)
 
-    bucket_contents['in_attributes'] = annotate_attributes(bucket_contents.index, attributes)
-    bucket_contents['from_submission'] = annotate_submissions(bucket_contents.index, namespace, name)
-    bucket_contents['log'] = annotate_logs(bucket_contents.index)
-    bucket_contents['file_type_in_keep_list'] = annotate_file_types_keep(bucket_contents.index, file_types)
+    index = bucket_contents.index
+    bucket_contents.loc[index, 'in_attributes'] = annotate_attributes(index, attributes)
+    bucket_contents.loc[index, 'from_submission'] = annotate_submissions(index, namespace, name)
+    bucket_contents.loc[index, 'log'] = annotate_logs(index)
+    bucket_contents.loc[index, 'file_type_in_keep_list'] = annotate_file_types_keep(index, file_types)
 
     annotation_columns = ['in_attributes', 'from_submission', 'log', 'file_type_in_keep_list']
     annotations = bucket_contents.loc[:, annotation_columns]
@@ -147,7 +148,7 @@ if __name__ == "__main__":
         header = False
         mode = 'a'
 
-        record_annotations(counts, result)
+        counts = record_annotations(counts, result)
 
     result = pd.read_csv(output_name, sep='\t', usecols=['path', 'nominated_for_removal'])
     nominated_files_to_clean = result[result['nominated_for_removal'].eq(True)].loc[:, 'path']

@@ -1,6 +1,10 @@
 # Terra helper
 Terra helper is a collection of scripts which leverage the [Terra API](https://api.firecloud.org) and [gsutil]() to perform cumbersome tasks on [Terra](https://app.terra.bio/#workspaces). A more appropriate name for this repository may be `Terra storage helper`, as the scripts pretty much just deal with cleaning up workspaces or moving underlying buckets. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which tries to clean up intermediate files. 
 
+Navigate to the [`terra-helper`](terra-helper/) folder for individual scripts and corresponding documentation. For use cases, refer to the [docs](docs) folder. Current use cases documented include,
+- [Manually cleaning a workspace](docs/manually-cleaning-a-workspace.md)
+- [Moving a bucket](docs/moving-a-bucket.md)
+
 ## Installation
 
 ### System requirements
@@ -43,11 +47,3 @@ virtualenv terra-helper
 source activate terra-helper/bin/activate
 pip install -r requirements.txt
 ```
-
-## Documentation and use cases
-Read about each script found in this repository in the [documentation](documentation.md) file. 
-
-A few different use cases are documented in the `use-cases/` folder:
-- [archiving a workspace](use-cases/archiving-a-workspace.md)
-- [cleaning up a workspace, deleting intermediate files](use-cases/cleaning-up-a-workspace.md)
-- [moving a bucket](use-cases/moving-a-bucket.md)

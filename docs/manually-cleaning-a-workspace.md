@@ -1,42 +1,63 @@
-## Deleting old or intermediate files from your workspace
-The script `index_workspace.py` can be used to list all files in a workspace's bucket that either do not appear in the data model or as a workspace annotation. You should then **review the list of files to ensure that there is nothing that you want to actually keep** and you can delete the files with `remove_files.sh`. 
+# Manually cleaning a workspace
+The following scripts and procedure can be used to remove unused and old intermediate files from a workspace on Terra. **This should not be performed while a workspace has a submission running**. 
 
-**This should not be used while a submission is running in your workspace and notebooks will not be kept**.
+Steps are as follows,
+1. List all entries in the data model within a given workspace
+2. List all files contained in a given workspace's bucket
+3. Identify files that are in the bucket that are _not_ in the data model
+4. Further subset the list of considered files to remove logs, system files, and any preferred file types. Specify if only files related to method submissions should be considered.
+5. Review files nominated for removal 
+6. Delete files
+
+To reiterate, **this should not be performed while a workspace has a running submission**. 
+
+Furthermore, as a warning, this process can take quite a long time for workspaces in the tens of terabytes or higher. In some extreme cases of hundreds of terabytes, this can take several days to run. For that reason, **please** consider utilizing cleaner-bot, instead, as it is heavily parallelized.
 
 ### Usage
-`index_workspace.py` will get the bucket associated with your workspace, pull all elements in the data model and workspace annotations, and take the difference. If `keep_related_files` is passed, any files in the same directory as one either in the datamodel or workspace annotations will also be kept, such as the associated stderr and stdout from any jobs. The argument `--keep` can be passed any number of times to prevent files of a given suffix to be added to the remove list. 
-
-A few outputs are produced. All files either not in the data model or kept with either of the keep flags will be written to `{namespace}.{name}.files_to_remove.txt`. This output is further reduced to a similar output named `{namespace}.{name}.files_to_remove.no_logs.txt` which does not contain any system files from Terra; thus, it really just contains files manually added to the bucket, files produced by call-cache, or outputs not present in the data model. This file is thus more managable for review; however! The log files _can_ add up. Please consider cleaning up your logs for submissions that you know that you will not use, too. Files not present in either of these files are listed in `{namespace}.{name}.files_keep.txt`, along with a rationale. Data model elements that are not a path are listed in `{namespace}.{name}.not_a_path.txt`.
-
-Required arguments:
-```bash
-    --namespace             <string>    Workspace's namespace
-    --name                  <string>    Workspace's name
-```
-
-Optional arguments:
-```bash
-    --keep_related_files    <boolean>   Boolean for keeping all contents for folders in data model
-    --keep, -k              <string>    File suffix to keep, can pass multiple times
-```
-
-`remove_files.sh` will simply pass the provided file, which should be a simple text file listing one file on google cloud per row, to gsutil for deletion. 
-Required arguments:
-```bash
-    HANDLE                  <string>    File path to list of files for removal
-```
-
-**Please review your `files_to_remove` output before deleting files.**
+1. Run [get_workspace_attributes.py](../terra-helper/README.md#get_workspace_attributespy)
+2. Run [get_workspace_bucket_contents.py](../terra-helper/README.md#get_workspace_bucket_contentspy)
+3. Run [identify_files_manually_clean_workspace.py](../terra-helper/README.md#identify_files_manually_clean_workspacepy)
+4. Review output of 3.
+5. Pass output of 3. to [remove_files.sh](../terra-helper/README.md#remove_filessh)
 
 ### Example
-To clean up the workspace vanallen-firecloud-dfci/Robinson2015_dev, the workspace is first indexed, reviewed, and then passed to `remove_files.sh`. I am also choosing to pass `--keep_related_files` to keep any files in a tail directory included in the workspace's data model or workspace annotations, even though it will significantly add to runtime. I am also passing `--keep bam` and `--keep .bai` to keep all bam and bam index files.
+To clean up the workspace vanallen-firecloud-nih/ovarian-9825, 
 
-Index the workspace:
+First, get workspace attributes,
 ```bash
-python index_workspace.py --namespace vanallen-firecloud-dfci --name Robinson2015_dev --keep_related_files --keep bam --keep bai
+python get_workspace_attributes.py --namespace vanallen-firecloud-nih --name ovarian-9825
 ```
-Once completed, a file named `vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt` appears in the current working directory. Elements included in the data model that are not included in this file are listed in `vanallen-firecloud-dfci.Robinson2015_dev.files_keep.txt`, along with a rationale specified by a 1 in the relevant column. Data model elements that are not a path are specified in `vanallen-firecloud-dfci.Robinson2015_dev.not_a_path.txt`, and should receive a glance over. `vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt` is reviewed and any files that I want to keep are deleted from the file, maybe I uploaded a PDF or Jupyter notebook to the Google Bucket and I want to keep it. The file is then saved and passed to `remove_files.sh`,
+
+This produces an output called `vanallen-firecloud-nih.ovarian-9825.attributes.tsv`.
+
+Second, get workspace bucket contents,
 ```bash
-bash remove_files.sh vanallen-firecloud-dfci.Robinson2015_dev.files_to_remove.txt
+python get_workspace_bucket_contents.py --namespace vanallen-firecloud-nih --name ovarian-9825
 ```
-You will be able to watch the progress of your files being deleted. 
+
+This produces an output called `vanallen-firecloud-nih.ovarian-9825.workspace_bucket_contents.tsv`.
+
+Third, pass both of these outputs to `identify_files_manually_clean_workspace.py` to nominate files for removal. Here, we take advantage of the optional parameters to ensure that bam, bam index, and markdown files are _not_ removed. Furthermore, we choose to _only_ consider files related to submissions.
+```bash
+python identify_files_manually_clean-workspace.py \ 
+          --namespace vanallen-firecloud-nih \
+          --name ovarian-9825 \
+          --attributes vanallen-firecloud-nih.ovarian-9825.attributes.tsv \
+          --bucket-contents vanallen-firecloud-nih.ovarian-9825.bucket_contents.tsv \
+          --keep bam --keep bai --keep .md \ 
+          --submissions-only \
+          --print
+```
+
+This produces two outputs:
+- `vanallen-firecloud-nih.ovarian-9825.bucket_contents.annotated.tsv`, which annotates the `bucket_contents.tsv` file with the whether each path matches the considered categories.
+- `vanallen-firecloud-nih.ovarian-9825.files_to_remove.tsv`, which lists all files in the above output that are set to 1 in the column `nominate_for_removal`
+
+Fourth, these files should be reviewed to ensure that no files are accidentally deleted.
+
+Fifth, the `files_to_remove.tsv` output is passed to remove_files.sh. 
+```bash
+bash remove_files.sh vanallen-firecloud-nih.ovarian-9825.files_to_remove.tsv
+```
+
+`remove_files.sh` will show progress of files being deleted. 

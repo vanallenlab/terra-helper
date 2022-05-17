@@ -17,6 +17,7 @@ COPY list_source_files.py /
 COPY list_workspaces.py /
 COPY remove_files.sh /
 COPY restore_bucket.sh /
+COPY restore_files.sh /
 
 COPY use-cases/ /use-cases/
 COPY README.md /

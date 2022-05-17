@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 import subprocess
 import io
+import numpy as np
 from oauth2client.client import GoogleCredentials
 
 import argparse
@@ -31,7 +32,8 @@ def main(dictionary):
     column = dictionary['col']
 
     df = request_data_model(namespace, workspace, entity_type)
-    download(df.loc[:, column], column)
+    for dataframe in np.array_split(df, 10): 
+        download(dataframe.loc[:, column], column)
 
 
 if __name__ == "__main__":

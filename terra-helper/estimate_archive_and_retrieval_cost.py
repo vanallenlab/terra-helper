@@ -105,20 +105,20 @@ def adjust_storage_charge_fees(time_scale, dataframe, fees_breakdown):
 
 
 def append_row_for_terra(dataframe, bucket_location, set_to_zero=False):
-    terra_row = (
-        dataframe
-        .loc[(bucket_location, STANDARD), dataframe.columns]
-        .rename((bucket_location, TERRA))
-        .to_frame()
-        .T
-        .reset_index()
-        .rename(columns={'level_0': 'location', 'level_1': 'storage_type'})
-        .set_index(['location', 'storage_type'])
-    )
-    if set_to_zero:
-        terra_row.loc[:] = 0
-    return pd.concat([dataframe, terra_row])
-
+    return dataframe
+    #terra_row = (
+    #    dataframe
+    #    .loc[(bucket_location, STANDARD), dataframe.columns]
+    #    .rename((bucket_location, TERRA))
+    #    .to_frame()
+    #    .T
+    #    .reset_index()
+    #    .rename(columns={'level_0': 'location', 'level_1': 'storage_type'})
+    #    .set_index(['location', 'storage_type'])
+    #)
+    #if set_to_zero:
+    #    terra_row.loc[:] = 0
+    #return pd.concat([dataframe, terra_row])
 
 def calculate_fees(network, a_operations, retrieval, bucket_location):
     # fees to archive from multi regional standard = network_to + operations_to
@@ -268,14 +268,14 @@ def create_page_recommendations(dataframe):
     dataframe.columns = [str(column) for column in dataframe.columns]
     for day in ['7', '15', '30', '45', '60', '90', '120', '150', '180', '270', '360', '540']:
         location, storage_type, cumulative_cost = extract_recommendation(dataframe, day)
-        terra_cost = dataframe.loc[(US, TERRA), day]
-        savings = cumulative_cost - terra_cost
+        #terra_cost = dataframe.loc[(US, TERRA), day]
+        #savings = cumulative_cost - terra_cost
         dictionary = {'days archived': day,
                       'recommended location': location,
                       'recommended storage type': storage_type,
                       'cumulative cost in recommended storage (archive and retrieval fees included)': cumulative_cost,
-                      'cumulative cost to remain in Terra': terra_cost,
-                      'cost difference relative to Terra': savings
+                      'cumulative cost to remain in Terra': 0,
+                      'cost difference relative to Terra': 0
                       }
         recommendations.append(dictionary)
     return pd.DataFrame(recommendations)
@@ -392,6 +392,7 @@ if __name__ == "__main__":
         print(fees)
 
     page_information = create_page_information(workspace, len(blobs), len(blobs_no_logs), location)
+    print(storage_costs_daily_with_fees.head(10))
     page_recommendations = create_page_recommendations(storage_costs_daily_with_fees)
     page_intersections = calculate_intersections(storage_costs_daily_with_fees)
     page_storage = create_page_storage_costs(storage_costs)

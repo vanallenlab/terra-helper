@@ -1,5 +1,9 @@
 # Terra helper
-Terra helper is a collection of scripts which leverage the [Terra API](https://api.firecloud.org) to perform cumbersome tasks on [Terra](https://app.terra.bio/#workspaces). A more appropriate name for this repository may be `Terra storage helper`, as the scripts pretty much just deal with cleaning up workspaces or moving underlying buckets. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which tries to clean up intermediate files. 
+Terra helper is a collection of scripts which leverage the [Terra API](https://api.firecloud.org) and [gsutil]() to perform cumbersome tasks on [Terra](https://app.terra.bio/#workspaces). A more appropriate name for this repository may be `Terra storage helper`, as the scripts pretty much just deal with cleaning up workspaces or moving underlying buckets. The python package [fiss](https://github.com/broadinstitute/fiss) also has a function called mop which tries to clean up intermediate files. 
+
+Navigate to the [`terra-helper`](terra-helper/) folder for individual scripts and corresponding documentation. For use cases, refer to the [docs](docs) folder. Current use cases documented include,
+- [Manually cleaning a workspace](docs/manually-cleaning-a-workspace.md)
+- [Moving a bucket](docs/moving-a-bucket.md)
 
 ## Installation
 
@@ -28,11 +32,11 @@ cd terra-helper
 ```
 
 ### Install Python dependencies
-Terra helper uses Python 3.7. We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) and running Python with either [Anaconda](https://www.anaconda.com/download/) or  [Miniconda](https://conda.io/miniconda.html). 
+Terra helper uses Python 3.10. We recommend using a [virtual environment](https://docs.python.org/3/tutorial/venv.html) and running Python with either [Anaconda](https://www.anaconda.com/download/) or  [Miniconda](https://conda.io/miniconda.html). 
 
 To create a virtual environment and install dependencies with Anaconda or Miniconda, run the following from this repository's directory:
 ```bash
-conda create -y -n terra-helper python=3.7
+conda create -y -n terra-helper python=3.10
 conda activate terra-helper
 pip install -r requirements.txt
 ```
@@ -43,11 +47,3 @@ virtualenv terra-helper
 source activate terra-helper/bin/activate
 pip install -r requirements.txt
 ```
-
-## Documentation and use cases
-Read about each script found in this repository in the [documentation](documentation.md) file. 
-
-A few different use cases are documented in the `use-cases/` folder:
-- [archiving a workspace](use-cases/archiving-a-workspace.md)
-- [cleaning up a workspace, deleting intermediate files](use-cases/cleaning-up-a-workspace.md)
-- [moving a bucket](use-cases/moving-a-bucket.md)

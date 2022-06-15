@@ -88,7 +88,7 @@ def request_workspace(namespace, name):
     return terra.Terra.request(terra.Terra.get_workspace, namespace=namespace, name=name)
 
 
-def main(namespace, name, attributes, bucket_contents, file_types=None, submissions_only_boolean=False):
+def main(namespace, name, attributes, bucket_contents, file_types=None, submissions_only_boolean=True):
     if file_types is None:
         file_types = ['.ipynb']
     bucket_contents = pd.DataFrame(bucket_contents)
@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser.add_argument('--chunk-size', '-c', type=int, default=10000, help='chunk size for reading bucket contents')
     parser.add_argument('--keep', '-k', nargs='+', action='extend', default=['ipynb'], help='File types to keep')
     parser.add_argument('--print', '-p', action='store_true', help='print details')
-    parser.add_argument('--submissions-only', '-s', action='store_true', help='only consider files from submissions')
+    parser.add_argument('--entire-bucket', '-e', action='store_true', help='consider bucket content beyond submissions')
     args = parser.parse_args()
     if args.print:
         print(args)
@@ -133,7 +133,10 @@ if __name__ == "__main__":
     workspace_attributes = pd.read_csv(args.attributes, sep='\t', usecols=['path'])
     workspace_attributes = workspace_attributes['path'].tolist()
 
-    submissions_only = args.submissions_only
+    if args.entire_bucket:
+        submissions_only = False
+    else:
+        submissions_only = True
 
     columns = ['in_attributes', 'from_submission', 'log', 'file_type_in_keep_list', 'nominated_for_removal']
     counts = pd.DataFrame(0, index=[True, False], columns=columns)

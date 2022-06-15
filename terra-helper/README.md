@@ -322,7 +322,7 @@ Optional arguments:
     --chunk-size             <int>      Rows to process per chunk from `--bucket-contents`, default: 10,000
     --keep                   <string>   File types to keep and not identify for removal. Leading periods will be removed, default: [`ipynb`]
     --print                  <boolean>  Prints a summary of results
-    --submissions-only       <boolean>  Considers only files generated from workspace submissions 
+    --entire-bucket          <boolean>  Considers entire bucket, files beyond those generated from workspace submissions 
 ```
 
 Outputs produced:

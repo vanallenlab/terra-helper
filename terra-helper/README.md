@@ -19,6 +19,7 @@ Run scripts from this directory. The table of contents contains a hyperlink to a
 - [remove_files.sh](#remove_filessh)
 - [restore_bucket.sh](#restore_bucketsh)
 - [restore_files.sh](#restore_filessh)
+- [summarize_gsutil_copy_log.py]()
 
 ## copy_bucket.sh
 `copy_bucket.sh` will copy the contents of one bucket to another. Contents of the source bucket will be placed in folder named after the source bucket within the destination bucket, with folder structure mirrored. Specifically, the following will result in passing `fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af` as a source bucket and `terra-workspace-archive-us-central1` as the destination bucket:
@@ -510,6 +511,44 @@ Outputs produced:
 Example:
 ```bash
 bash restore_files.sh fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-to-terra-workspace-archive-us-central1.gsutil_copy_log.csv fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-restored
+```
+
+[Back to table of contents](#table-of-contents)
+
+## summarize_gsutil_copy_log.py
+`summarize_gsutil_copy_log.py` is used to produce a summary of a gsutil copy log from `gsutil cp`. This script assumes that the gsutil copy log is still a comma delimited, `.csv`, file format. In particular the script will summarize,
+- How many files were attempted for copying
+- How many files were successfully copied
+- How many bytes were attempted for copying
+- How many bytes were successfully copied
+- If the file count attempted match the file count successful
+- If the bytes attempted matched those successful
+
+### Usage
+Required arguments:
+```bash
+    --input, -i         <string>    Path to gsutil copy log
+```
+
+Optional arguments:
+```bash
+    --output, -o        <boolean>    Argument passed to instruct the script to produce output files
+```
+
+Outputs produced:
+
+| File name                 | Description                                                                                            |
+|---------------------------|--------------------------------------------------------------------------------------------------------|
+| `n_files_attempted.txt`   | A file that contains a single integer of the number of files attempted to be copied.                   |
+| `n_files_success.txt`     | A file that contains a single integer of the number of files successfully copied.                      |
+| `bytes_attempted.txt`     | A file that contains a single integer of the number of bytes attempted to be copied.                   |
+| `bytes_success.txt`       | A file that contains a single integer of the number of bytes successfully copied.                      |
+| `all_files_succeeded.txt` | A file that contains a single boolean stating that file count attempted equals those succeeded or not. |
+| `all_bytes_succeeded.txt` | A file that contains a single boolean stating that the bytes attempted equals those succeeded or not.  |
+
+Example:
+```bash
+python summarize_gsutil_copy.py -i fc-01e89ec0-c3b9-4a2f-9a70-21460d4427af-to-terra-workspace-archive-us-central1.gsutil_copy_log.csv -o
 ```
 
 [Back to table of contents](#table-of-contents)

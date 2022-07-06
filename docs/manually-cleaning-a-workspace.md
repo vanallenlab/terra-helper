@@ -18,7 +18,7 @@ Furthermore, as a warning, this process can take quite a long time for workspace
 2. Run [get_workspace_bucket_contents.py](../terra-helper/README.md#get_workspace_bucket_contentspy)
 3. Run [identify_files_manually_clean_workspace.py](../terra-helper/README.md#identify_files_manually_clean_workspacepy)
 4. Review output of 3.
-5. Pass output of 3. to [remove_files.sh](../terra-helper/README.md#remove_filessh)
+5. Pass output of 3 to [remove_files.sh](../terra-helper/README.md#remove_filessh)
 
 ### Example
 To clean up the workspace vanallen-firecloud-nih/ovarian-9825, 
